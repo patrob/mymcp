@@ -40,7 +40,7 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   }
 
   // If authentication is disabled, render children directly
-  if (!config.Features?.EnableAuth || !config.Clerk?.PublishableKey) {
+  if (!config.features?.enableAuth || !config.clerk?.publishableKey) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
@@ -58,8 +58,8 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
 
   return (
     <ClerkProvider 
-      publishableKey={config.Clerk.PublishableKey}
-      afterSignOutUrl={config.Clerk.AfterSignOutUrl || "/"}
+      publishableKey={config.clerk.publishableKey}
+      afterSignOutUrl={config.clerk.afterSignOutUrl || "/"}
     >
       <SignedIn>
         <div className="min-h-screen bg-background">
