@@ -1,0 +1,104 @@
+version: 2
+updates:
+  # npm dependencies for React frontend
+  - package-ecosystem: "npm"
+    directory: "/OnParDev.MyMcp.Api/ClientApp"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    # Only allow minor and patch updates, ignore major updates
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    # Group minor and patch updates together to reduce PR noise
+    groups:
+      frontend-minor-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Add assignees and reviewers for dependency PRs
+    assignees:
+      - "probinson"
+    reviewers:
+      - "probinson"
+    # Add labels to dependency PRs
+    labels:
+      - "dependencies"
+      - "frontend"
+      - "auto-update"
+    # Commit message preferences
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+
+  # NuGet dependencies for .NET backend
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday" 
+      time: "02:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    # Only allow minor and patch updates, ignore major updates
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    # Group minor and patch updates together to reduce PR noise
+    groups:
+      backend-minor-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Add assignees and reviewers for dependency PRs
+    assignees:
+      - "probinson"
+    reviewers:
+      - "probinson"
+    # Add labels to dependency PRs
+    labels:
+      - "dependencies"
+      - "backend"
+      - "auto-update"
+    # Commit message preferences
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+
+  # GitHub Actions workflow dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    # Group all GitHub Actions updates together
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    # Add assignees and reviewers for GitHub Actions PRs
+    assignees:
+      - "probinson"
+    reviewers:
+      - "probinson"
+    # Add labels to GitHub Actions PRs
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "auto-update"
+    # Commit message preferences
+    commit-message:
+      prefix: "ci"
+      include: "scope"
