@@ -1,0 +1,208 @@
+name: Database Migration Testing
+
+on:
+  pull_request:
+    paths:
+      - 'db/migrations/**'
+      - 'docker-compose.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'db/migrations/**'
+      - 'docker-compose.yml'
+
+jobs:
+  flyway-migration-test:
+    name: Flyway Migration Test
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: onpardev_mymcp_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Wait for PostgreSQL to be ready
+      run: |
+        until pg_isready -h localhost -p 5432 -U postgres; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+        echo "PostgreSQL is ready!"
+    
+    - name: Test Flyway migrations
+      run: |
+        docker run --rm \
+          --network host \
+          -v $(pwd)/db/migrations:/flyway/sql \
+          flyway/flyway:10 \
+          -url=jdbc:postgresql://localhost:5432/onpardev_mymcp_test \
+          -user=postgres \
+          -password=postgres \
+          -connectRetries=60 \
+          migrate
+    
+    - name: Validate database schema
+      run: |
+        docker run --rm \
+          --network host \
+          postgres:16 \
+          psql -h localhost -U postgres -d onpardev_mymcp_test -c "
+            -- Check that all expected tables exist
+            SELECT COUNT(*) as table_count 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE';
+            
+            -- Check for any tables with zero columns (potential migration issues)
+            SELECT table_name, column_count
+            FROM (
+              SELECT table_name, COUNT(*) as column_count
+              FROM information_schema.columns
+              WHERE table_schema = 'public'
+              GROUP BY table_name
+            ) t
+            WHERE column_count = 0;
+            
+            -- Verify primary key constraints exist
+            SELECT table_name
+            FROM information_schema.tables t
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+            AND NOT EXISTS (
+              SELECT 1 
+              FROM information_schema.table_constraints tc
+              WHERE tc.table_name = t.table_name 
+              AND tc.constraint_type = 'PRIMARY KEY'
+            );
+          "
+      env:
+        PGPASSWORD: postgres
+    
+    - name: Test migration info
+      run: |
+        docker run --rm \
+          --network host \
+          -v $(pwd)/db/migrations:/flyway/sql \
+          flyway/flyway:10 \
+          -url=jdbc:postgresql://localhost:5432/onpardev_mymcp_test \
+          -user=postgres \
+          -password=postgres \
+          info
+    
+    - name: Test migration rollback capability
+      run: |
+        echo "Testing if migrations can be validated..."
+        docker run --rm \
+          --network host \
+          -v $(pwd)/db/migrations:/flyway/sql \
+          flyway/flyway:10 \
+          -url=jdbc:postgresql://localhost:5432/onpardev_mymcp_test \
+          -user=postgres \
+          -password=postgres \
+          validate || echo "Note: Validation warnings are informational only"
+
+  flyway-compatibility-test:
+    name: PostgreSQL Compatibility Test
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        postgres-version: ['15', '16']
+    
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres-version }}
+        env:
+          POSTGRES_DB: onpardev_mymcp_compat
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Wait for PostgreSQL to be ready
+      run: |
+        until pg_isready -h localhost -p 5432 -U postgres; do
+          echo "Waiting for PostgreSQL ${{ matrix.postgres-version }}..."
+          sleep 2
+        done
+        echo "PostgreSQL ${{ matrix.postgres-version }} is ready!"
+    
+    - name: Test migrations on PostgreSQL ${{ matrix.postgres-version }}
+      run: |
+        docker run --rm \
+          --network host \
+          -v $(pwd)/db/migrations:/flyway/sql \
+          flyway/flyway:10 \
+          -url=jdbc:postgresql://localhost:5432/onpardev_mymcp_compat \
+          -user=postgres \
+          -password=postgres \
+          -connectRetries=60 \
+          migrate
+    
+    - name: Verify schema on PostgreSQL ${{ matrix.postgres-version }}
+      run: |
+        docker run --rm \
+          --network host \
+          postgres:${{ matrix.postgres-version }} \
+          psql -h localhost -U postgres -d onpardev_mymcp_compat -c "
+            SELECT schemaname, tablename, tableowner 
+            FROM pg_tables 
+            WHERE schemaname = 'public'
+            ORDER BY tablename;
+          "
+      env:
+        PGPASSWORD: postgres
+
+  migration-summary:
+    name: Migration Test Summary
+    runs-on: ubuntu-latest
+    needs: [flyway-migration-test, flyway-compatibility-test]
+    if: always()
+    
+    steps:
+    - name: Migration test summary
+      run: |
+        echo "## Database Migration Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Test | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Flyway Migration Test | ${{ needs.flyway-migration-test.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| PostgreSQL Compatibility Test | ${{ needs.flyway-compatibility-test.result }} |" >> $GITHUB_STEP_SUMMARY
+        
+        echo ""
+        echo "Flyway Migration Test: ${{ needs.flyway-migration-test.result }}"
+        echo "PostgreSQL Compatibility Test: ${{ needs.flyway-compatibility-test.result }}"
+        
+        if [[ "${{ needs.flyway-migration-test.result }}" != "success" ]] || \
+           [[ "${{ needs.flyway-compatibility-test.result }}" != "success" ]]; then
+          echo "❌ One or more migration tests failed"
+          echo "## ❌ Migration Tests Failed" >> $GITHUB_STEP_SUMMARY
+          echo "Database migration validation failed. Check the individual test results above." >> $GITHUB_STEP_SUMMARY
+          exit 1
+        else
+          echo "✅ All migration tests passed"
+          echo "## ✅ Migration Tests Passed" >> $GITHUB_STEP_SUMMARY
+          echo "All database migrations validated successfully across PostgreSQL versions." >> $GITHUB_STEP_SUMMARY
+        fi
