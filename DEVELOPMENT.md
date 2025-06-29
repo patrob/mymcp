@@ -89,6 +89,73 @@ env:
   CLERK__AUTHORITY: ${{ secrets.CLERK_AUTHORITY }}
 ```
 
+## Coding Standards - Level 100
+
+### Code Quality Requirements
+- **No duplication** (including tests)
+- **Ticket # in commit message** for traceability
+- **No commented out code** - delete unused code
+- **Methods have 10 or fewer lines** (including test methods)
+- **Methods have 3 or fewer parameters**
+- **Classes have 7 or fewer public members** (Single Responsibility)
+- **No method calls or logic in constructors**
+- **No checked exceptions** (Java/.NET equivalent)
+
+### Naming Conventions
+- **Classes** are named using a **noun or noun phrase**
+- **Methods** are named using a **verb or verb phrase**
+- **Variable and field names** are **pronounceable**
+- **Only 1 level of inheritance**
+
+## Coding Standards - Level 200
+
+### Advanced Design Principles
+- **Only inherit from abstract classes or interfaces**
+- **No name decorations** (avoid FooImpl, FooService suffixes)
+- **No getter/setters on Interfaces**
+- **No constant interfaces**
+- **No public constants**
+
+### Method Design Patterns
+- **Query methods don't throw exceptions**
+- **Query methods don't change state**
+- **Command methods change state**
+- **Command methods throw exceptions when state is unable to be changed**
+- **Factory methods over constructors**
+
+## Unit Test Standards - Level 100
+
+### Test Quality Requirements
+- **No assertNotNull()** - use more specific assertions
+- **No @Ignore tests** - fix or delete broken tests
+- **3 or fewer assertions per test method**
+- **No mocked static methods**
+- **Methods have 10 or fewer lines** (including test methods)
+
+## Unit Test Standards - Level 200
+
+### Advanced Testing Principles
+- **Arrange, Act, Assert** pattern required
+- **No uncovered lines** - 100% code coverage goal
+- **Prefer state-based testing** - prefer stubs over mocks
+- **No duplication in test code**
+
+### Arrange, Act, Assert (AAA) Pattern
+```typescript
+it('should return user when valid ID is provided', () => {
+  // Arrange
+  const userId = 'user123'
+  const expectedUser = { id: userId, name: 'John Doe' }
+  mockUserService.getUser.mockReturnValue(expectedUser)
+
+  // Act
+  const result = userController.getUser(userId)
+
+  // Assert
+  expect(result).toEqual(expectedUser)
+})
+```
+
 ## Architecture Principles
 
 ### Backend-Driven Configuration

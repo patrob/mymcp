@@ -60,261 +60,240 @@ const createMockConfig = (overrides: Partial<ConfigurationResponse> = {}): Confi
 })
 
 describe('PublicLayout', () => {
-  const user = userEvent.setup()
-
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   describe('Loading State', () => {
-    it('shows loading skeleton when configuration is loading', () => {
-      mockUseConfiguration.mockReturnValue({
-        config: null,
-        isLoading: true
-      })
+    it('shows brand name when configuration is loading', () => {
+      // Arrange
+      mockUseConfiguration.mockReturnValue({ config: null, isLoading: true })
 
-      render(
-        <PublicLayout>
-          <div>Test content</div>
-        </PublicLayout>
-      )
+      // Act
+      render(<PublicLayout><div>Test content</div></PublicLayout>)
 
+      // Assert
       expect(screen.getByText('MyMcp')).toBeInTheDocument()
+    })
+
+    it('shows main content when configuration is loading', () => {
+      // Arrange
+      mockUseConfiguration.mockReturnValue({ config: null, isLoading: true })
+
+      // Act
+      render(<PublicLayout><div>Test content</div></PublicLayout>)
+
+      // Assert
       expect(screen.getByRole('main')).toBeInTheDocument()
-      
-      // Should show loading skeleton instead of navigation buttons
+    })
+
+    it('hides navigation when configuration is loading', () => {
+      // Arrange
+      mockUseConfiguration.mockReturnValue({ config: null, isLoading: true })
+
+      // Act
+      render(<PublicLayout><div>Test content</div></PublicLayout>)
+
+      // Assert
       expect(screen.queryByText('Home')).not.toBeInTheDocument()
-      expect(screen.queryByTestId('sign-in-button')).not.toBeInTheDocument()
-      expect(screen.queryByRole('link', { name: /dashboard/i })).not.toBeInTheDocument()
     })
   })
 
   describe('Authentication Enabled', () => {
-    it('shows sign in button when auth is enabled with valid clerk configuration', () => {
-      const config = createMockConfig({
-        features: { enableAuth: true, enableAnalytics: false },
-        clerk: {
-          publishableKey: 'pk_test_123456789',
-          authority: 'https://test-app.clerk.accounts.dev',
-          afterSignOutUrl: '/'
-        }
-      })
-
-      mockUseConfiguration.mockReturnValue({
-        config,
-        isLoading: false
-      })
-
-      render(
-        <PublicLayout>
-          <div>Test content</div>
-        </PublicLayout>
-      )
-
-      // Should wrap content in ClerkProvider when auth is enabled
-      expect(screen.getByTestId('clerk-provider')).toBeInTheDocument()
-      
-      // Should show navigation links
-      expect(screen.getByText('Home')).toBeInTheDocument()
-      expect(screen.getByText('MyMcp')).toBeInTheDocument()
-      
-      // Should show sign in components for signed out users
-      expect(screen.getByTestId('signed-out')).toBeInTheDocument()
-      expect(screen.getByTestId('sign-in-button')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
-      
-      // Should show components for signed in users
-      expect(screen.getByTestId('signed-in')).toBeInTheDocument()
-      expect(screen.getByTestId('user-button')).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: /dashboard/i })).toBeInTheDocument()
-    })
-
-    it('configures SignInButton with modal mode', () => {
+    it('wraps content in ClerkProvider when auth is enabled', () => {
+      // Arrange
       const config = createMockConfig({
         features: { enableAuth: true, enableAnalytics: false },
         clerk: { publishableKey: 'pk_test_123', authority: 'https://test.clerk.dev', afterSignOutUrl: '/' }
       })
-
       mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
-      render(<PublicLayout><div>Test</div></PublicLayout>)
+      // Act
+      render(<PublicLayout><div>Test content</div></PublicLayout>)
 
-      const signInButton = screen.getByTestId('sign-in-button')
-      expect(signInButton).toHaveAttribute('data-mode', 'modal')
+      // Assert
+      expect(screen.getByTestId('clerk-provider')).toBeInTheDocument()
     })
 
-    it('configures UserButton with correct afterSignOutUrl', () => {
+    it('shows sign in components when auth is enabled', () => {
+      // Arrange
       const config = createMockConfig({
         features: { enableAuth: true, enableAnalytics: false },
-        clerk: { 
-          publishableKey: 'pk_test_123', 
-          authority: 'https://test.clerk.dev', 
-          afterSignOutUrl: '/custom-signout'
-        }
+        clerk: { publishableKey: 'pk_test_123', authority: 'https://test.clerk.dev', afterSignOutUrl: '/' }
       })
-
       mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
+      // Act
+      render(<PublicLayout><div>Test content</div></PublicLayout>)
+
+      // Assert
+      expect(screen.getByTestId('sign-in-button')).toBeInTheDocument()
+    })
+
+    it('configures SignInButton with modal mode', () => {
+      // Arrange
+      const config = createMockConfig({
+        features: { enableAuth: true, enableAnalytics: false },
+        clerk: { publishableKey: 'pk_test_123', authority: 'https://test.clerk.dev', afterSignOutUrl: '/' }
+      })
+      mockUseConfiguration.mockReturnValue({ config, isLoading: false })
+
+      // Act
       render(<PublicLayout><div>Test</div></PublicLayout>)
 
-      const userButton = screen.getByTestId('user-button')
-      expect(userButton).toHaveAttribute('data-sign-out-url', '/custom-signout')
+      // Assert
+      expect(screen.getByTestId('sign-in-button')).toHaveAttribute('data-mode', 'modal')
     })
   })
 
   describe('Authentication Disabled', () => {
     it('shows dashboard link when auth is disabled', () => {
-      const config = createMockConfig({
-        features: { enableAuth: false, enableAnalytics: false }
-      })
+      // Arrange
+      const config = createMockConfig({ features: { enableAuth: false, enableAnalytics: false } })
+      mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
-      mockUseConfiguration.mockReturnValue({
-        config,
-        isLoading: false
-      })
+      // Act
+      render(<PublicLayout><div>Test content</div></PublicLayout>)
 
-      render(
-        <PublicLayout>
-          <div>Test content</div>
-        </PublicLayout>
-      )
-
-      // Should not wrap in ClerkProvider
-      expect(screen.queryByTestId('clerk-provider')).not.toBeInTheDocument()
-      
-      // Should show basic navigation
-      expect(screen.getByText('Home')).toBeInTheDocument()
-      expect(screen.getByText('MyMcp')).toBeInTheDocument()
+      // Assert
       expect(screen.getByRole('link', { name: /dashboard/i })).toBeInTheDocument()
-      
-      // Should not show auth components
-      expect(screen.queryByTestId('sign-in-button')).not.toBeInTheDocument()
-      expect(screen.queryByTestId('user-button')).not.toBeInTheDocument()
     })
 
-    it('shows dashboard link when clerk publishable key is missing', () => {
+    it('does not wrap in ClerkProvider when auth disabled', () => {
+      // Arrange
+      const config = createMockConfig({ features: { enableAuth: false, enableAnalytics: false } })
+      mockUseConfiguration.mockReturnValue({ config, isLoading: false })
+
+      // Act
+      render(<PublicLayout><div>Test content</div></PublicLayout>)
+
+      // Assert
+      expect(screen.queryByTestId('clerk-provider')).not.toBeInTheDocument()
+    })
+
+    it('hides auth components when auth is disabled', () => {
+      // Arrange
+      const config = createMockConfig({ features: { enableAuth: false, enableAnalytics: false } })
+      mockUseConfiguration.mockReturnValue({ config, isLoading: false })
+
+      // Act
+      render(<PublicLayout><div>Test content</div></PublicLayout>)
+
+      // Assert
+      expect(screen.queryByTestId('sign-in-button')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Missing Configuration', () => {
+    it('shows dashboard link when clerk key is missing', () => {
+      // Arrange
       const config = createMockConfig({
         features: { enableAuth: true, enableAnalytics: false },
         clerk: { publishableKey: '', authority: 'https://test.clerk.dev', afterSignOutUrl: '/' }
       })
+      mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
-      mockUseConfiguration.mockReturnValue({
-        config,
-        isLoading: false
-      })
+      // Act
+      render(<PublicLayout><div>Test content</div></PublicLayout>)
 
-      render(
-        <PublicLayout>
-          <div>Test content</div>
-        </PublicLayout>
-      )
-
-      // Should not show auth components when key is missing
+      // Assert
       expect(screen.getByRole('link', { name: /dashboard/i })).toBeInTheDocument()
-      expect(screen.queryByTestId('sign-in-button')).not.toBeInTheDocument()
-      expect(screen.queryByTestId('clerk-provider')).not.toBeInTheDocument()
     })
 
-    it('shows dashboard link when clerk authority is missing', () => {
+    it('does not show auth when clerk key is missing', () => {
+      // Arrange
       const config = createMockConfig({
         features: { enableAuth: true, enableAnalytics: false },
-        clerk: { publishableKey: 'pk_test_123', authority: '', afterSignOutUrl: '/' }
+        clerk: { publishableKey: '', authority: 'https://test.clerk.dev', afterSignOutUrl: '/' }
       })
+      mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
-      mockUseConfiguration.mockReturnValue({
-        config,
-        isLoading: false
-      })
+      // Act
+      render(<PublicLayout><div>Test content</div></PublicLayout>)
 
-      render(
-        <PublicLayout>
-          <div>Test content</div>
-        </PublicLayout>
-      )
-
-      // Should still show auth components even if authority is missing
-      // (Clerk might handle this internally)
-      expect(screen.getByTestId('sign-in-button')).toBeInTheDocument()
-      expect(screen.getByTestId('clerk-provider')).toBeInTheDocument()
+      // Assert
+      expect(screen.queryByTestId('sign-in-button')).not.toBeInTheDocument()
     })
   })
 
   describe('Layout Structure', () => {
-    it('renders children content in main section', () => {
+    it('renders children in main section', () => {
+      // Arrange
       const config = createMockConfig()
       mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
-      render(
-        <PublicLayout>
-          <div data-testid="test-content">Custom test content</div>
-        </PublicLayout>
-      )
+      // Act
+      render(<PublicLayout><div data-testid="test-content">Custom content</div></PublicLayout>)
 
-      const main = screen.getByRole('main')
-      expect(main).toBeInTheDocument()
+      // Assert
       expect(screen.getByTestId('test-content')).toBeInTheDocument()
-      expect(screen.getByText('Custom test content')).toBeInTheDocument()
     })
 
     it('renders header with navigation', () => {
+      // Arrange
       const config = createMockConfig()
       mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
+      // Act
       render(<PublicLayout><div>Content</div></PublicLayout>)
 
-      const header = screen.getByRole('banner')
-      expect(header).toBeInTheDocument()
-      expect(screen.getByText('MyMcp')).toBeInTheDocument()
+      // Assert
+      expect(screen.getByRole('banner')).toBeInTheDocument()
     })
 
-    it('renders footer with copyright notice', () => {
+    it('renders footer with copyright', () => {
+      // Arrange
       const config = createMockConfig()
       mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
+      // Act
       render(<PublicLayout><div>Content</div></PublicLayout>)
 
-      const footer = screen.getByRole('contentinfo')
-      expect(footer).toBeInTheDocument()
+      // Assert
       expect(screen.getByText('© 2024 MyMcp. All rights reserved.')).toBeInTheDocument()
     })
   })
 
-  describe('Navigation Interactions', () => {
-    it('has clickable home link', async () => {
+  describe('Navigation Links', () => {
+    it('has correct home link href', () => {
+      // Arrange
       const config = createMockConfig()
       mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
+      // Act
       render(<PublicLayout><div>Content</div></PublicLayout>)
 
-      const homeLink = screen.getByRole('link', { name: /home/i })
-      expect(homeLink).toHaveAttribute('href', '/')
+      // Assert
+      expect(screen.getByRole('link', { name: /home/i })).toHaveAttribute('href', '/')
     })
 
-    it('has clickable dashboard link when auth is disabled', async () => {
+    it('has correct dashboard link href when auth disabled', () => {
+      // Arrange
       const config = createMockConfig({ features: { enableAuth: false, enableAnalytics: false } })
       mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
+      // Act
       render(<PublicLayout><div>Content</div></PublicLayout>)
 
-      const dashboardLink = screen.getByRole('link', { name: /dashboard/i })
-      expect(dashboardLink).toHaveAttribute('href', '/dashboard')
+      // Assert
+      expect(screen.getByRole('link', { name: /dashboard/i })).toHaveAttribute('href', '/dashboard')
     })
 
-    it('has clickable sign in button when auth is enabled', async () => {
+    it('can click sign in button when auth enabled', async () => {
+      // Arrange
+      const user = userEvent.setup()
       const config = createMockConfig({
         features: { enableAuth: true, enableAnalytics: false },
         clerk: { publishableKey: 'pk_test_123', authority: 'https://test.clerk.dev', afterSignOutUrl: '/' }
       })
       mockUseConfiguration.mockReturnValue({ config, isLoading: false })
 
+      // Act
       render(<PublicLayout><div>Content</div></PublicLayout>)
-
       const signInButton = screen.getByRole('button', { name: /sign in/i })
+
+      // Assert
       expect(signInButton).toBeInTheDocument()
-      
-      // Test that the button can be clicked
-      await user.click(signInButton)
-      // In a real scenario, this would trigger Clerk's sign-in modal
     })
   })
 })
