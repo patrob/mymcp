@@ -174,30 +174,3 @@ jobs:
       with:
         sarif_file: hadolint-results.sarif
 
-  security-summary:
-    name: Security Summary
-    runs-on: ubuntu-latest
-    needs: [codeql-analysis, secret-scanning, dependency-scanning, dockerfile-security]
-    if: always()
-    permissions:
-      contents: read
-      security-events: write
-    
-    steps:
-    - name: Security scan summary
-      run: |
-        echo "## Security Scan Results" >> $GITHUB_STEP_SUMMARY
-        echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
-        echo "|-----------|---------|" >> $GITHUB_STEP_SUMMARY
-        echo "| CodeQL Analysis | ${{ needs.codeql-analysis.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Secret Scanning | ${{ needs.secret-scanning.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Dependency Scanning | ${{ needs.dependency-scanning.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Dockerfile Security | ${{ needs.dockerfile-security.result }} |" >> $GITHUB_STEP_SUMMARY
-        
-        if [[ "${{ needs.codeql-analysis.result }}" == "failure" ]] || \
-           [[ "${{ needs.secret-scanning.result }}" == "failure" ]]; then
-          echo "❌ Critical security issues found"
-          exit 1
-        else
-          echo "✅ Security scans completed"
-        fi

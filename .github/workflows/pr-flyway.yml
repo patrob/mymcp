@@ -176,33 +176,3 @@ jobs:
       env:
         PGPASSWORD: postgres
 
-  migration-summary:
-    name: Migration Test Summary
-    runs-on: ubuntu-latest
-    needs: [flyway-migration-test, flyway-compatibility-test]
-    if: always()
-    
-    steps:
-    - name: Migration test summary
-      run: |
-        echo "## Database Migration Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "| Test | Status |" >> $GITHUB_STEP_SUMMARY
-        echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Flyway Migration Test | ${{ needs.flyway-migration-test.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| PostgreSQL Compatibility Test | ${{ needs.flyway-compatibility-test.result }} |" >> $GITHUB_STEP_SUMMARY
-        
-        echo ""
-        echo "Flyway Migration Test: ${{ needs.flyway-migration-test.result }}"
-        echo "PostgreSQL Compatibility Test: ${{ needs.flyway-compatibility-test.result }}"
-        
-        if [[ "${{ needs.flyway-migration-test.result }}" != "success" ]] || \
-           [[ "${{ needs.flyway-compatibility-test.result }}" != "success" ]]; then
-          echo "❌ One or more migration tests failed"
-          echo "## ❌ Migration Tests Failed" >> $GITHUB_STEP_SUMMARY
-          echo "Database migration validation failed. Check the individual test results above." >> $GITHUB_STEP_SUMMARY
-          exit 1
-        else
-          echo "✅ All migration tests passed"
-          echo "## ✅ Migration Tests Passed" >> $GITHUB_STEP_SUMMARY
-          echo "All database migrations validated successfully across PostgreSQL versions." >> $GITHUB_STEP_SUMMARY
-        fi
