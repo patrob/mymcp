@@ -36,7 +36,7 @@ secrets.json
 
 # npm & Node.js (for React SPA)
 node_modules/
-**/node_modules/
+**/node_modules
 npm-debug.log*
 
 # Build output

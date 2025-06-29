@@ -1,27 +1,69 @@
 import { ReactNode } from 'react'
+import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
+import { useConfiguration } from '@/contexts/ConfigurationContext'
 
 interface PublicLayoutProps {
   children: ReactNode
 }
 
 export function PublicLayout({ children }: PublicLayoutProps) {
-  return (
+  const { config, isLoading } = useConfiguration()
+
+  const Navigation = () => (
+    <nav className="flex items-center justify-between">
+      <div className="text-xl font-bold">
+        MyMcp
+      </div>
+      <div className="flex items-center space-x-4">
+        <a href="/" className="text-muted-foreground hover:text-foreground">
+          Home
+        </a>
+        {config?.Features?.EnableAuth && config.Clerk?.PublishableKey ? (
+          <>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
+                  Sign In
+                </button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <a href="/dashboard" className="text-muted-foreground hover:text-foreground">
+                Dashboard
+              </a>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+          </>
+        ) : (
+          <a href="/dashboard" className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
+            Dashboard
+          </a>
+        )}
+      </div>
+    </nav>
+  )
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="container mx-auto px-4 py-4">
+            <nav className="flex items-center justify-between">
+              <div className="text-xl font-bold">MyMcp</div>
+              <div className="animate-pulse bg-muted h-8 w-20 rounded"></div>
+            </nav>
+          </div>
+        </header>
+        <main>{children}</main>
+      </div>
+    )
+  }
+
+  const content = (
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center justify-between">
-            <div className="text-xl font-bold">
-              MyMcp
-            </div>
-            <div className="space-x-4">
-              <a href="/" className="text-muted-foreground hover:text-foreground">
-                Home
-              </a>
-              <a href="/dashboard" className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
-                Sign In
-              </a>
-            </div>
-          </nav>
+          <Navigation />
         </div>
       </header>
       <main>
@@ -36,4 +78,19 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       </footer>
     </div>
   )
+
+  // If auth is enabled and we have a publishable key, wrap with ClerkProvider
+  if (config?.Features?.EnableAuth && config.Clerk?.PublishableKey) {
+    return (
+      <ClerkProvider 
+        publishableKey={config.Clerk.PublishableKey}
+        afterSignOutUrl={config.Clerk.AfterSignOutUrl || "/"}
+      >
+        {content}
+      </ClerkProvider>
+    )
+  }
+
+  // Otherwise, render without Clerk
+  return content
 }

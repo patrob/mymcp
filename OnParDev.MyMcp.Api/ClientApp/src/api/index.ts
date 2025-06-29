@@ -7,12 +7,12 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
-export type { AnonymousTypeOfAnonymousTypeOfstringAndstringAndAnonymousTypeOfstringAndstringAndAnonymousTypeOfbooleanAndboolean } from './models/AnonymousTypeOfAnonymousTypeOfstringAndstringAndAnonymousTypeOfstringAndstringAndAnonymousTypeOfbooleanAndboolean';
-export type { AnonymousTypeOfbooleanAndboolean } from './models/AnonymousTypeOfbooleanAndboolean';
 export type { AnonymousTypeOfstringAndDateTime } from './models/AnonymousTypeOfstringAndDateTime';
-export type { AnonymousTypeOfstringAndstring } from './models/AnonymousTypeOfstringAndstring';
-export type { AnonymousTypeOfstringAndstring2 } from './models/AnonymousTypeOfstringAndstring2';
+export type { ApiConfiguration } from './models/ApiConfiguration';
+export type { ClerkConfiguration } from './models/ClerkConfiguration';
+export type { ConfigurationResponse } from './models/ConfigurationResponse';
 export type { CreateServerInstanceDto } from './models/CreateServerInstanceDto';
+export type { FeatureConfiguration } from './models/FeatureConfiguration';
 export type { UpdateServerInstanceDto } from './models/UpdateServerInstanceDto';
 
 export { OnParDevMyMcpApiService } from './services/OnParDevMyMcpApiService';

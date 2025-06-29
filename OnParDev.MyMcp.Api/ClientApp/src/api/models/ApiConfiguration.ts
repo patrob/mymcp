@@ -2,8 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type AnonymousTypeOfbooleanAndboolean = {
-    enableAuth: boolean;
-    enableAnalytics: boolean;
+export type ApiConfiguration = {
+    baseUrl?: string;
+    version?: string;
 };
 

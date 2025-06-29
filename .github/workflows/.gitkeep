@@ -1,0 +1,10 @@
+# Placeholder for GitHub Actions workflows
+# 
+# GitHub Secrets available for CI/CD:
+# - CLERK_PUBLISHABLE_KEY
+# - CLERK_AUTHORITY
+#
+# Example usage in workflow:
+# env:
+#   CLERK__PUBLISHABLEKEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+#   CLERK__AUTHORITY: ${{ secrets.CLERK_AUTHORITY }}

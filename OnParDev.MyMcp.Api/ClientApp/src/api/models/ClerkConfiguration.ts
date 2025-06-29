@@ -2,8 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type AnonymousTypeOfstringAndstring2 = {
-    baseUrl: string | null;
-    version: string | null;
+export type ClerkConfiguration = {
+    publishableKey?: string;
+    authority?: string;
+    afterSignOutUrl?: string;
 };
 

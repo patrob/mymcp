@@ -7,6 +7,7 @@ using System.Text;
 using OnParDev.MyMcp.Api.Infrastructure.Data;
 using OnParDev.MyMcp.Api.Features.Auth;
 using OnParDev.MyMcp.Api.Features.Servers;
+using OnParDev.MyMcp.Api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +48,7 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
-    
+
     options.AddPolicy("Production", policy =>
     {
         policy.WithOrigins("https://yourdomain.com") // Replace with actual production domain
@@ -94,19 +95,20 @@ app.MapGet("/api/v1/health", () => new { Status = "Healthy", Timestamp = DateTim
    .WithOpenApi();
 
 // Configuration endpoint
-app.MapGet("/api/v1/config", () => new
+app.MapGet("/api/v1/config", () => new ConfigurationResponse
 {
-    Clerk = new
+    Clerk = new ClerkConfiguration
     {
         PublishableKey = app.Configuration["Clerk:PublishableKey"] ?? "",
-        Authority = app.Configuration["Clerk:Authority"] ?? ""
+        Authority = app.Configuration["Clerk:Authority"] ?? "",
+        AfterSignOutUrl = "/"
     },
-    Api = new
+    Api = new ApiConfiguration
     {
         BaseUrl = app.Configuration["Api:BaseUrl"] ?? "http://localhost:5099",
         Version = "v1"
     },
-    Features = new
+    Features = new FeatureConfiguration
     {
         EnableAuth = !string.IsNullOrEmpty(app.Configuration["Clerk:PublishableKey"]),
         EnableAnalytics = app.Configuration.GetValue<bool>("Features:EnableAnalytics", false)

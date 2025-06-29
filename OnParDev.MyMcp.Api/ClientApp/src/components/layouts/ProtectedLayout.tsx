@@ -57,7 +57,10 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   }
 
   return (
-    <ClerkProvider publishableKey={config.Clerk.PublishableKey}>
+    <ClerkProvider 
+      publishableKey={config.Clerk.PublishableKey}
+      afterSignOutUrl={config.Clerk.AfterSignOutUrl || "/"}
+    >
       <SignedIn>
         <div className="min-h-screen bg-background">
           {children}

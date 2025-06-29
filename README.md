@@ -62,6 +62,32 @@ OnParDev.MyMcp/
 - Docker & Docker Compose
 - PostgreSQL (via Docker)
 
+### Required Configuration
+
+The following user secrets must be configured for full functionality:
+
+| Secret Key | Description | Required |
+|------------|-------------|----------|
+| `Clerk:PublishableKey` | Clerk authentication publishable key | For auth features |
+| `Clerk:Authority` | Clerk authority URL | For auth features |
+
+**Note:** The application will run without these secrets but authentication features will be disabled.
+
+### GitHub Secrets (For CI/CD)
+
+The following GitHub repository secrets are configured for CI/CD workflows:
+
+| GitHub Secret | Description | Local Equivalent |
+|---------------|-------------|------------------|
+| `CLERK_PUBLISHABLE_KEY` | Clerk authentication key | `Clerk:PublishableKey` |
+| `CLERK_AUTHORITY` | Clerk authority URL | `Clerk:Authority` |
+
+**Adding new GitHub secrets:**
+```bash
+gh secret set SECRET_NAME --body "secret_value"
+gh secret list  # Verify secrets
+```
+
 ### 1. Clone and Setup
 
 ```bash
@@ -86,44 +112,45 @@ This starts PostgreSQL on `localhost:5432` with:
 docker-compose up flyway
 ```
 
-### 4. Configure Authentication
+### 4. Configure Authentication (Required for Auth Features)
 
-Create `OnParDev.MyMcp.Api/ClientApp/.env`:
+Configure user secrets for Clerk authentication:
 
-```
-VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-```
-
-Update `appsettings.json` with your Clerk configuration:
-
-```json
-{
-  "Clerk": {
-    "Authority": "https://your-clerk-domain.clerk.accounts.dev",
-    "Audience": "your-audience"
-  }
-}
+```bash
+cd OnParDev.MyMcp.Api
+dotnet user-secrets init
+dotnet user-secrets set "Clerk:PublishableKey" "your_clerk_publishable_key_here"
+dotnet user-secrets set "Clerk:Authority" "https://your-app.clerk.accounts.dev"
 ```
 
-### 5. Start Development Servers
+**Getting Clerk Keys:**
+1. Sign up at [Clerk.com](https://clerk.com/)
+2. Create a new application
+3. Go to **API Keys** in your Clerk dashboard
+4. Copy the **Publishable Key**
+5. The Authority URL is typically `https://[your-app-name].clerk.accounts.dev`
 
-**Terminal 1 - Start Backend:**
+**Note:** The app works without authentication if Clerk keys are not configured. Features are dynamically enabled based on available configuration.
+
+### 5. Start Application
+
+**Single Command (Recommended):**
 ```bash
 cd OnParDev.MyMcp.Api
 dotnet run
 ```
 
-**Terminal 2 - Start Frontend:**
-```bash
-cd OnParDev.MyMcp.Api/ClientApp
-npm run dev
-```
+This automatically:
+- Starts the ASP.NET Core API on `http://localhost:5099`
+- Launches the React dev server on `http://localhost:5173`
+- Generates TypeScript API client from OpenAPI spec
+- Sets up HTTPS certificates for development
 
-**Access the application at `https://localhost:7221`**
+**Access the application at `http://localhost:5173`**
 
 The SPA proxy configuration automatically:
 - Routes API requests (`/api/*`) to the .NET backend
-- Routes all other requests to the React dev server on port 5173
+- Serves the React frontend
 - Eliminates CORS issues during development
 - Provides hot reload for both frontend and backend
 

@@ -2,8 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type AnonymousTypeOfstringAndstring = {
-    publishableKey: string | null;
-    authority: string | null;
+export type FeatureConfiguration = {
+    enableAuth?: boolean;
+    enableAnalytics?: boolean;
 };
 
