@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { PublicLayout } from './PublicLayout'
 import { useConfiguration } from '@/contexts/ConfigurationContext'
 import type { ConfigurationResponse } from '@/api/models/ConfigurationResponse'
@@ -279,9 +278,8 @@ describe('PublicLayout', () => {
       expect(screen.getByRole('link', { name: /dashboard/i })).toHaveAttribute('href', '/dashboard')
     })
 
-    it('can click sign in button when auth enabled', async () => {
+    it('can click sign in button when auth enabled', () => {
       // Arrange
-      const user = userEvent.setup()
       const config = createMockConfig({
         features: { enableAuth: true, enableAnalytics: false },
         clerk: { publishableKey: 'pk_test_123', authority: 'https://test.clerk.dev', afterSignOutUrl: '/' }
