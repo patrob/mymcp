@@ -18,7 +18,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         <a href="/" className="text-muted-foreground hover:text-foreground">
           Home
         </a>
-        {config?.Features?.EnableAuth && config.Clerk?.PublishableKey ? (
+        {config?.features?.enableAuth && config.clerk?.publishableKey ? (
           <>
             <SignedOut>
               <SignInButton mode="modal">
@@ -31,7 +31,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
               <a href="/dashboard" className="text-muted-foreground hover:text-foreground">
                 Dashboard
               </a>
-              <UserButton afterSignOutUrl="/" />
+              <UserButton afterSignOutUrl={config.clerk.afterSignOutUrl || "/"} />
             </SignedIn>
           </>
         ) : (
@@ -80,11 +80,11 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   )
 
   // If auth is enabled and we have a publishable key, wrap with ClerkProvider
-  if (config?.Features?.EnableAuth && config.Clerk?.PublishableKey) {
+  if (config?.features?.enableAuth && config.clerk?.publishableKey) {
     return (
       <ClerkProvider 
-        publishableKey={config.Clerk.PublishableKey}
-        afterSignOutUrl={config.Clerk.AfterSignOutUrl || "/"}
+        publishableKey={config.clerk.publishableKey}
+        afterSignOutUrl={config.clerk.afterSignOutUrl || "/"}
       >
         {content}
       </ClerkProvider>

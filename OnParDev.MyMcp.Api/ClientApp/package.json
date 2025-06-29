@@ -6,12 +6,12 @@
   "scripts": {
     "prestart": "node aspnetcore-https.cjs && node aspnetcore-react.cjs && npm run generate-api",
     "start": "rimraf ./build && vite --port 5173",
-    "predev": "node aspnetcore-https.cjs && node aspnetcore-react.cjs && npm run generate-api",  
+    "predev": "node aspnetcore-https.cjs && node aspnetcore-react.cjs && npm run generate-api",
     "dev": "rimraf ./build && vite --port 5173",
     "build": "npm run generate-api && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest --run",
     "generate-api": "npx openapi-typescript-codegen --input http://localhost:5099/openapi/v1.json --output ./src/api --client fetch"
   },
   "dependencies": {
@@ -45,6 +45,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
@@ -55,6 +58,7 @@
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.12.0",
     "http-proxy-middleware": "^2.0.6",
+    "jsdom": "^26.1.0",
     "openapi-typescript": "^7.4.2",
     "openapi-typescript-codegen": "^0.29.0",
     "postcss": "^8.4.49",
