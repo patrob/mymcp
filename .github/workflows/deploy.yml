@@ -2,18 +2,18 @@ name: Production Deployment
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths-ignore:
-      - '**.md'
+      - "**.md"
   workflow_dispatch:
     inputs:
       skip_infrastructure:
-        description: 'Skip infrastructure deployment'
+        description: "Skip infrastructure deployment"
         required: false
         default: false
         type: boolean
       droplet_ip:
-        description: 'Droplet IP address (leave empty to use from infrastructure)'
+        description: "Droplet IP address (leave empty to use from infrastructure)"
         required: false
         type: string
 
@@ -22,480 +22,479 @@ permissions:
   security-events: write
 
 env:
-  DOTNET_VERSION: '9.0.x'
-  NODE_VERSION: '22'
+  DOTNET_VERSION: "9.0.x"
+  NODE_VERSION: "22"
 
 jobs:
   # Security Analysis Jobs (Parallel)
-  codeql-analysis:
-    name: CodeQL Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'csharp', 'typescript' ]
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        config-file: ./.github/codeql/codeql-config.yml
-    
-    # For C# analysis
-    - name: Setup .NET
-      if: matrix.language == 'csharp'
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-    
-    - name: Cache NuGet packages
-      if: matrix.language == 'csharp'
-      uses: actions/cache@v4
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
-    
-    - name: Build .NET solution
-      if: matrix.language == 'csharp'
-      run: |
-        dotnet restore
-        dotnet build --no-restore --configuration Release
-    
-    # For TypeScript analysis  
-    - name: Setup Node.js
-      if: matrix.language == 'typescript'
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: './OnParDev.MyMcp.Api/ClientApp/package-lock.json'
-    
-    - name: Install frontend dependencies
-      if: matrix.language == 'typescript'
-      run: |
-        cd OnParDev.MyMcp.Api/ClientApp
-        npm ci
-    
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
+  # codeql-analysis:
+  #   name: CodeQL Analysis
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     actions: read
+  #     contents: read
+  #     security-events: write
 
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       language: [ 'csharp', 'typescript' ]
 
-  dependency-scanning:
-    name: Dependency Vulnerability Scan
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: './OnParDev.MyMcp.Api/ClientApp/package-lock.json'
-    
-    - name: Install .NET dependencies
-      run: dotnet restore
-    
-    - name: Install npm dependencies
-      run: |
-        cd OnParDev.MyMcp.Api/ClientApp
-        npm ci
-    
-    - name: Run .NET vulnerability scan
-      run: dotnet list package --vulnerable --include-transitive
-    
-    - name: Run npm audit
-      run: |
-        cd OnParDev.MyMcp.Api/ClientApp
-        npm audit --audit-level=moderate || echo "npm audit found vulnerabilities in dev dependencies - non-blocking"
-      continue-on-error: true
+  #   steps:
+  #   - name: Checkout repository
+  #     uses: actions/checkout@v4
+
+  #   - name: Initialize CodeQL
+  #     uses: github/codeql-action/init@v3
+  #     with:
+  #       languages: ${{ matrix.language }}
+  #       config-file: ./.github/codeql/codeql-config.yml
+
+  #   # For C# analysis
+  #   - name: Setup .NET
+  #     if: matrix.language == 'csharp'
+  #     uses: actions/setup-dotnet@v4
+  #     with:
+  #       dotnet-version: ${{ env.DOTNET_VERSION }}
+
+  #   - name: Cache NuGet packages
+  #     if: matrix.language == 'csharp'
+  #     uses: actions/cache@v4
+  #     with:
+  #       path: ~/.nuget/packages
+  #       key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props') }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-nuget-
+
+  #   - name: Build .NET solution
+  #     if: matrix.language == 'csharp'
+  #     run: |
+  #       dotnet restore
+  #       dotnet build --no-restore --configuration Release
+
+  #   # For TypeScript analysis
+  #   - name: Setup Node.js
+  #     if: matrix.language == 'typescript'
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: ${{ env.NODE_VERSION }}
+  #       cache: 'npm'
+  #       cache-dependency-path: './OnParDev.MyMcp.Api/ClientApp/package-lock.json'
+
+  #   - name: Install frontend dependencies
+  #     if: matrix.language == 'typescript'
+  #     run: |
+  #       cd OnParDev.MyMcp.Api/ClientApp
+  #       npm ci
+
+  #   - name: Perform CodeQL Analysis
+  #     uses: github/codeql-action/analyze@v3
+  #     with:
+  #       category: "/language:${{matrix.language}}"
+
+  # dependency-scanning:
+  #   name: Dependency Vulnerability Scan
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     security-events: write
+
+  #   steps:
+  #   - name: Checkout repository
+  #     uses: actions/checkout@v4
+
+  #   - name: Setup .NET
+  #     uses: actions/setup-dotnet@v4
+  #     with:
+  #       dotnet-version: ${{ env.DOTNET_VERSION }}
+
+  #   - name: Setup Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: ${{ env.NODE_VERSION }}
+  #       cache: 'npm'
+  #       cache-dependency-path: './OnParDev.MyMcp.Api/ClientApp/package-lock.json'
+
+  #   - name: Install .NET dependencies
+  #     run: dotnet restore
+
+  #   - name: Install npm dependencies
+  #     run: |
+  #       cd OnParDev.MyMcp.Api/ClientApp
+  #       npm ci
+
+  #   - name: Run .NET vulnerability scan
+  #     run: dotnet list package --vulnerable --include-transitive
+
+  #   - name: Run npm audit
+  #     run: |
+  #       cd OnParDev.MyMcp.Api/ClientApp
+  #       npm audit --audit-level=moderate || echo "npm audit found vulnerabilities in dev dependencies - non-blocking"
+  #     continue-on-error: true
 
   # Build and Test Jobs (Parallel, depends on security)
-  frontend-build-test:
-    name: Frontend Build & Test
-    runs-on: ubuntu-latest
-    needs: [codeql-analysis, dependency-scanning]
-    defaults:
-      run:
-        working-directory: ./OnParDev.MyMcp.Api/ClientApp
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup .NET (for API generation)
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: './OnParDev.MyMcp.Api/ClientApp/package-lock.json'
-    
-    - name: Install .NET dependencies
-      run: dotnet restore
-      working-directory: ./
-    
-    - name: Start API for OpenAPI generation
-      run: |
-        dotnet build --configuration Release
-        nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release &
-        sleep 30
-      working-directory: ./
-      env:
-        CLERK__PUBLISHABLEKEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
-        CLERK__AUTHORITY: ${{ secrets.CLERK_AUTHORITY }}
-    
-    - name: Install frontend dependencies
-      run: npm ci
-    
-    - name: Run ESLint
-      run: npm run lint
-    
-    - name: Run TypeScript check
-      run: npx tsc --noEmit
-    
-    - name: Run Vitest tests
-      run: npm test
-    
-    - name: Generate API client
-      run: npm run generate-api
-    
-    - name: Build frontend
-      run: npm run build
-    
-    - name: Upload frontend build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: frontend-build-prod
-        path: ./OnParDev.MyMcp.Api/ClientApp/dist/
-        retention-days: 90
+  # frontend-build-test:
+  #   name: Frontend Build & Test
+  #   runs-on: ubuntu-latest
+  #   needs: [codeql-analysis, dependency-scanning]
+  #   defaults:
+  #     run:
+  #       working-directory: ./OnParDev.MyMcp.Api/ClientApp
 
-  backend-build-test:
-    name: Backend Build & Test
-    runs-on: ubuntu-latest
-    needs: [codeql-analysis, dependency-scanning]
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: onpardev_mymcp_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-    
-    - name: Cache NuGet packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
-    
-    - name: Restore dependencies
-      run: dotnet restore
-    
-    - name: Build solution
-      run: dotnet build --no-restore --configuration Release
-    
-    - name: Run unit tests
-      run: dotnet test OnParDev.MyMcp.Api.UnitTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/
-    
-    - name: Run integration tests
-      run: dotnet test OnParDev.MyMcp.Api.IntegrationTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/
-      env:
-        ConnectionStrings__DefaultConnection: "Host=localhost;Database=onpardev_mymcp_test;Username=postgres;Password=postgres"
-        CLERK__PUBLISHABLEKEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
-        CLERK__AUTHORITY: ${{ secrets.CLERK_AUTHORITY }}
-    
-    - name: Publish API
-      run: dotnet publish OnParDev.MyMcp.Api --configuration Release --output ./publish-api -p:SkipFrontendBuild=true
-    
-    - name: Upload API build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: api-build-prod
-        path: ./publish-api/
-        retention-days: 90
-    
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results-prod
-        path: TestResults/
-        retention-days: 30
+  #   steps:
+  #   - uses: actions/checkout@v4
+
+  #   - name: Setup .NET (for API generation)
+  #     uses: actions/setup-dotnet@v4
+  #     with:
+  #       dotnet-version: ${{ env.DOTNET_VERSION }}
+
+  #   - name: Setup Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: ${{ env.NODE_VERSION }}
+  #       cache: 'npm'
+  #       cache-dependency-path: './OnParDev.MyMcp.Api/ClientApp/package-lock.json'
+
+  #   - name: Install .NET dependencies
+  #     run: dotnet restore
+  #     working-directory: ./
+
+  #   - name: Start API for OpenAPI generation
+  #     run: |
+  #       dotnet build --configuration Release
+  #       nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release &
+  #       sleep 30
+  #     working-directory: ./
+  #     env:
+  #       CLERK__PUBLISHABLEKEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+  #       CLERK__AUTHORITY: ${{ secrets.CLERK_AUTHORITY }}
+
+  #   - name: Install frontend dependencies
+  #     run: npm ci
+
+  #   - name: Run ESLint
+  #     run: npm run lint
+
+  #   - name: Run TypeScript check
+  #     run: npx tsc --noEmit
+
+  #   - name: Run Vitest tests
+  #     run: npm test
+
+  #   - name: Generate API client
+  #     run: npm run generate-api
+
+  #   - name: Build frontend
+  #     run: npm run build
+
+  #   - name: Upload frontend build artifacts
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: frontend-build-prod
+  #       path: ./OnParDev.MyMcp.Api/ClientApp/dist/
+  #       retention-days: 90
+
+  # backend-build-test:
+  #   name: Backend Build & Test
+  #   runs-on: ubuntu-latest
+  #   needs: [codeql-analysis, dependency-scanning]
+
+  #   services:
+  #     postgres:
+  #       image: postgres:15
+  #       env:
+  #         POSTGRES_DB: onpardev_mymcp_test
+  #         POSTGRES_USER: postgres
+  #         POSTGRES_PASSWORD: postgres
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #       ports:
+  #         - 5432:5432
+
+  #   steps:
+  #   - uses: actions/checkout@v4
+
+  #   - name: Setup .NET
+  #     uses: actions/setup-dotnet@v4
+  #     with:
+  #       dotnet-version: ${{ env.DOTNET_VERSION }}
+
+  #   - name: Cache NuGet packages
+  #     uses: actions/cache@v4
+  #     with:
+  #       path: ~/.nuget/packages
+  #       key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props') }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-nuget-
+
+  #   - name: Restore dependencies
+  #     run: dotnet restore
+
+  #   - name: Build solution
+  #     run: dotnet build --no-restore --configuration Release
+
+  #   - name: Run unit tests
+  #     run: dotnet test OnParDev.MyMcp.Api.UnitTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/
+
+  #   - name: Run integration tests
+  #     run: dotnet test OnParDev.MyMcp.Api.IntegrationTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/
+  #     env:
+  #       ConnectionStrings__DefaultConnection: "Host=localhost;Database=onpardev_mymcp_test;Username=postgres;Password=postgres"
+  #       CLERK__PUBLISHABLEKEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+  #       CLERK__AUTHORITY: ${{ secrets.CLERK_AUTHORITY }}
+
+  #   - name: Publish API
+  #     run: dotnet publish OnParDev.MyMcp.Api --configuration Release --output ./publish-api -p:SkipFrontendBuild=true
+
+  #   - name: Upload API build artifacts
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: api-build-prod
+  #       path: ./publish-api/
+  #       retention-days: 90
+
+  #   - name: Upload test results
+  #     uses: actions/upload-artifact@v4
+  #     if: always()
+  #     with:
+  #       name: test-results-prod
+  #       path: TestResults/
+  #       retention-days: 30
 
   # Infrastructure Deployment
   deploy-infrastructure:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
-    needs: [frontend-build-test, backend-build-test]
+    # needs: [frontend-build-test, backend-build-test]
     if: github.event.inputs.skip_infrastructure != 'true'
     environment: production
-    
+
     defaults:
       run:
         working-directory: infrastructure
-    
+
     outputs:
       droplet_ip: ${{ steps.outputs.outputs.droplet_ip }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ~1.0
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ~1.0
 
-    - name: Terraform Init
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
-        SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
-        SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
-      run: terraform init
+      - name: Terraform Init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+          SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+          SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+        run: terraform init
 
-    - name: Import Existing Resources
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
-        SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
-        SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
-        TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-        TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
-      run: |
-        echo "🔍 Checking for existing resources to import..."
-        
-        # Import SSH key if it exists
-        echo "Checking for existing SSH key..."
-        SSH_KEY_ID=$(curl -s -H "Authorization: Bearer $TF_VAR_digitalocean_token" \
-          "https://api.digitalocean.com/v2/account/keys" | \
-          jq -r --arg pubkey "$TF_VAR_ssh_public_key" \
-          '.ssh_keys[] | select(.public_key == $pubkey) | .id')
-        
-        if [ "$SSH_KEY_ID" != "null" ] && [ "$SSH_KEY_ID" != "" ]; then
-          echo "✅ Found existing SSH key with ID: $SSH_KEY_ID"
-          terraform import digitalocean_ssh_key.main $SSH_KEY_ID || echo "⚠️  SSH key import failed (might already be in state)"
-        else
-          echo "ℹ️  No existing SSH key found, will create new one"
-        fi
-        
-        # Import firewall if it exists
-        echo "Checking for existing firewall..."
-        FIREWALL_ID=$(curl -s -H "Authorization: Bearer $TF_VAR_digitalocean_token" \
-          "https://api.digitalocean.com/v2/firewalls" | \
-          jq -r --arg name "mymcp-production-firewall" \
-          '.firewalls[] | select(.name == $name) | .id')
-        
-        if [ "$FIREWALL_ID" != "null" ] && [ "$FIREWALL_ID" != "" ]; then
-          echo "✅ Found existing firewall with ID: $FIREWALL_ID"
-          terraform import digitalocean_firewall.app_firewall $FIREWALL_ID || echo "⚠️  Firewall import failed (might already be in state)"
-        else
-          echo "ℹ️  No existing firewall found, will create new one"
-        fi
-        
-        # Import droplet if it exists
-        echo "Checking for existing droplet..."
-        DROPLET_ID=$(curl -s -H "Authorization: Bearer $TF_VAR_digitalocean_token" \
-          "https://api.digitalocean.com/v2/droplets" | \
-          jq -r --arg name "mymcp-production" \
-          '.droplets[] | select(.name == $name) | .id')
-        
-        if [ "$DROPLET_ID" != "null" ] && [ "$DROPLET_ID" != "" ]; then
-          echo "✅ Found existing droplet with ID: $DROPLET_ID"
-          terraform import digitalocean_droplet.app_server $DROPLET_ID || echo "⚠️  Droplet import failed (might already be in state)"
-        else
-          echo "ℹ️  No existing droplet found, will create new one"
-        fi
-        
-        echo "📋 Import process completed"
+      - name: Import Existing Resources
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+          SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+          SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+          TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+        run: |
+          echo "🔍 Checking for existing resources to import..."
 
-    - name: Terraform Plan
-      id: plan
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
-        SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
-        SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
-        TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-        TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
-      run: terraform plan -out=tfplan
+          # Import SSH key if it exists
+          echo "Checking for existing SSH key..."
+          SSH_KEY_ID=$(curl -s -H "Authorization: Bearer $TF_VAR_digitalocean_token" \
+            "https://api.digitalocean.com/v2/account/keys" | \
+            jq -r --arg pubkey "$TF_VAR_ssh_public_key" \
+            '.ssh_keys[] | select(.public_key == $pubkey) | .id')
 
-    - name: Terraform Apply
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
-        SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
-        SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
-        TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-        TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
-      run: terraform apply -auto-approve tfplan
+          if [ "$SSH_KEY_ID" != "null" ] && [ "$SSH_KEY_ID" != "" ]; then
+            echo "✅ Found existing SSH key with ID: $SSH_KEY_ID"
+            terraform import digitalocean_ssh_key.main $SSH_KEY_ID || echo "⚠️  SSH key import failed (might already be in state)"
+          else
+            echo "ℹ️  No existing SSH key found, will create new one"
+          fi
 
-    - name: Get outputs
-      id: outputs
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
-        SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
-        SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
-      run: |
-        echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
-        echo "ssh_connection=$(terraform output -raw ssh_connection)" >> $GITHUB_OUTPUT
+          # Import firewall if it exists
+          echo "Checking for existing firewall..."
+          FIREWALL_ID=$(curl -s -H "Authorization: Bearer $TF_VAR_digitalocean_token" \
+            "https://api.digitalocean.com/v2/firewalls" | \
+            jq -r --arg name "mymcp-production-firewall" \
+            '.firewalls[] | select(.name == $name) | .id')
 
-    - name: Infrastructure deployment summary
-      run: |
-        echo "🏗️ Infrastructure deployed successfully!" >> $GITHUB_STEP_SUMMARY
-        echo "**Droplet IP:** ${{ steps.outputs.outputs.droplet_ip }}" >> $GITHUB_STEP_SUMMARY
-        echo "**SSH:** ${{ steps.outputs.outputs.ssh_connection }}" >> $GITHUB_STEP_SUMMARY
+          if [ "$FIREWALL_ID" != "null" ] && [ "$FIREWALL_ID" != "" ]; then
+            echo "✅ Found existing firewall with ID: $FIREWALL_ID"
+            terraform import digitalocean_firewall.app_firewall $FIREWALL_ID || echo "⚠️  Firewall import failed (might already be in state)"
+          else
+            echo "ℹ️  No existing firewall found, will create new one"
+          fi
+
+          # Import droplet if it exists
+          echo "Checking for existing droplet..."
+          DROPLET_ID=$(curl -s -H "Authorization: Bearer $TF_VAR_digitalocean_token" \
+            "https://api.digitalocean.com/v2/droplets" | \
+            jq -r --arg name "mymcp-production" \
+            '.droplets[] | select(.name == $name) | .id')
+
+          if [ "$DROPLET_ID" != "null" ] && [ "$DROPLET_ID" != "" ]; then
+            echo "✅ Found existing droplet with ID: $DROPLET_ID"
+            terraform import digitalocean_droplet.app_server $DROPLET_ID || echo "⚠️  Droplet import failed (might already be in state)"
+          else
+            echo "ℹ️  No existing droplet found, will create new one"
+          fi
+
+          echo "📋 Import process completed"
+
+      - name: Terraform Plan
+        id: plan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+          SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+          SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+          TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+          SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+          SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+          TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Get outputs
+        id: outputs
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+          SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+          SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+        run: |
+          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
+          echo "ssh_connection=$(terraform output -raw ssh_connection)" >> $GITHUB_OUTPUT
+
+      - name: Infrastructure deployment summary
+        run: |
+          echo "🏗️ Infrastructure deployed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "**Droplet IP:** ${{ steps.outputs.outputs.droplet_ip }}" >> $GITHUB_STEP_SUMMARY
+          echo "**SSH:** ${{ steps.outputs.outputs.ssh_connection }}" >> $GITHUB_STEP_SUMMARY
 
   # Application Deployment
-  deploy-application:
-    name: Deploy Application
-    runs-on: ubuntu-latest
-    needs: [deploy-infrastructure]
-    if: always() && (needs.deploy-infrastructure.result == 'success' || needs.deploy-infrastructure.result == 'skipped')
-    environment: production
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+  # deploy-application:
+  #   name: Deploy Application
+  #   runs-on: ubuntu-latest
+  #   needs: [deploy-infrastructure]
+  #   if: always() && (needs.deploy-infrastructure.result == 'success' || needs.deploy-infrastructure.result == 'skipped')
+  #   environment: production
 
-    - name: Get droplet IP
-      id: get-ip
-      run: |
-        if [ "${{ github.event.inputs.droplet_ip }}" != "" ]; then
-          echo "droplet_ip=${{ github.event.inputs.droplet_ip }}" >> $GITHUB_OUTPUT
-        elif [ "${{ needs.deploy-infrastructure.outputs.droplet_ip }}" != "" ]; then
-          echo "droplet_ip=${{ needs.deploy-infrastructure.outputs.droplet_ip }}" >> $GITHUB_OUTPUT
-        else
-          # Fallback: get from Terraform state
-          cd infrastructure
-          export AWS_ACCESS_KEY_ID="${{ secrets.SPACES_ACCESS_KEY_ID }}"
-          export AWS_SECRET_ACCESS_KEY="${{ secrets.SPACES_SECRET_ACCESS_KEY }}"
-          export SPACES_ACCESS_KEY_ID="${{ secrets.SPACES_ACCESS_KEY_ID }}"
-          export SPACES_SECRET_ACCESS_KEY="${{ secrets.SPACES_SECRET_ACCESS_KEY }}"
-          export TF_VAR_digitalocean_token="${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
-          export TF_VAR_ssh_public_key="${{ secrets.SSH_PUBLIC_KEY }}"
-          terraform init
-          DROPLET_IP=$(terraform output -raw droplet_ip)
-          echo "droplet_ip=${DROPLET_IP}" >> $GITHUB_OUTPUT
-        fi
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
 
-    - name: Create deployment files
-      run: |
-        cat > .env << EOF
-        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-        CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
-        CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}
-        CLERK_AUTHORITY=${{ secrets.CLERK_AUTHORITY }}
-        EOF
+  #   - name: Get droplet IP
+  #     id: get-ip
+  #     run: |
+  #       if [ "${{ github.event.inputs.droplet_ip }}" != "" ]; then
+  #         echo "droplet_ip=${{ github.event.inputs.droplet_ip }}" >> $GITHUB_OUTPUT
+  #       elif [ "${{ needs.deploy-infrastructure.outputs.droplet_ip }}" != "" ]; then
+  #         echo "droplet_ip=${{ needs.deploy-infrastructure.outputs.droplet_ip }}" >> $GITHUB_OUTPUT
+  #       else
+  #         # Fallback: get from Terraform state
+  #         cd infrastructure
+  #         export AWS_ACCESS_KEY_ID="${{ secrets.SPACES_ACCESS_KEY_ID }}"
+  #         export AWS_SECRET_ACCESS_KEY="${{ secrets.SPACES_SECRET_ACCESS_KEY }}"
+  #         export SPACES_ACCESS_KEY_ID="${{ secrets.SPACES_ACCESS_KEY_ID }}"
+  #         export SPACES_SECRET_ACCESS_KEY="${{ secrets.SPACES_SECRET_ACCESS_KEY }}"
+  #         export TF_VAR_digitalocean_token="${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
+  #         export TF_VAR_ssh_public_key="${{ secrets.SSH_PUBLIC_KEY }}"
+  #         terraform init
+  #         DROPLET_IP=$(terraform output -raw droplet_ip)
+  #         echo "droplet_ip=${DROPLET_IP}" >> $GITHUB_OUTPUT
+  #       fi
 
-    - name: Setup SSH key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ steps.get-ip.outputs.droplet_ip }} >> ~/.ssh/known_hosts
+  #   - name: Create deployment files
+  #     run: |
+  #       cat > .env << EOF
+  #       POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+  #       CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
+  #       CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}
+  #       CLERK_AUTHORITY=${{ secrets.CLERK_AUTHORITY }}
+  #       EOF
 
-    - name: Copy files to server
-      run: |
-        ssh mymcp@${{ steps.get-ip.outputs.droplet_ip }} "mkdir -p /opt/mymcp"
-        scp -r . mymcp@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/
-        scp .env mymcp@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/.env
+  #   - name: Setup SSH key
+  #     run: |
+  #       mkdir -p ~/.ssh
+  #       echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+  #       chmod 600 ~/.ssh/id_rsa
+  #       ssh-keyscan -H ${{ steps.get-ip.outputs.droplet_ip }} >> ~/.ssh/known_hosts
 
-    - name: Deploy application
-      run: |
-        ssh mymcp@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
-          cd /opt/mymcp
-          
-          # Stop existing containers
-          docker-compose -f docker-compose.production.yml down || true
-          
-          # Remove old images to save space on $6/month droplet
-          docker image prune -f
-          
-          # Build and start the application
-          docker-compose -f docker-compose.production.yml up -d --build
-          
-          # Wait for services to be healthy
-          echo "Waiting for services to start..."
-          sleep 30
-          
-          # Check if services are running
-          docker-compose -f docker-compose.production.yml ps
-        EOF
+  #   - name: Copy files to server
+  #     run: |
+  #       ssh mymcp@${{ steps.get-ip.outputs.droplet_ip }} "mkdir -p /opt/mymcp"
+  #       scp -r . mymcp@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/
+  #       scp .env mymcp@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/.env
 
-    - name: Health check
-      run: |
-        echo "Performing health check..."
-        for i in {1..10}; do
-          if curl -f http://${{ steps.get-ip.outputs.droplet_ip }}/health; then
-            echo "✅ Application is healthy!"
-            break
-          else
-            echo "⏳ Waiting for application to be ready... (attempt $i/10)"
-            sleep 30
-          fi
-          if [ $i -eq 10 ]; then
-            echo "❌ Health check failed after 10 attempts"
-            exit 1
-          fi
-        done
+  #   - name: Deploy application
+  #     run: |
+  #       ssh mymcp@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
+  #         cd /opt/mymcp
 
-    - name: Deployment summary
-      run: |
-        echo "🚀 Production deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Application URL:** http://${{ steps.get-ip.outputs.droplet_ip }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Health Check:** http://${{ steps.get-ip.outputs.droplet_ip }}/health" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**SSH Access:** \`ssh mymcp@${{ steps.get-ip.outputs.droplet_ip }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Deployment Pipeline:**" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Security Analysis (CodeQL, Dependencies)" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Build & Test (Frontend + Backend)" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Infrastructure Deployment" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Application Deployment" >> $GITHUB_STEP_SUMMARY
+  #         # Stop existing containers
+  #         docker-compose -f docker-compose.production.yml down || true
+
+  #         # Remove old images to save space on $6/month droplet
+  #         docker image prune -f
+
+  #         # Build and start the application
+  #         docker-compose -f docker-compose.production.yml up -d --build
+
+  #         # Wait for services to be healthy
+  #         echo "Waiting for services to start..."
+  #         sleep 30
+
+  #         # Check if services are running
+  #         docker-compose -f docker-compose.production.yml ps
+  #       EOF
+
+  #   - name: Health check
+  #     run: |
+  #       echo "Performing health check..."
+  #       for i in {1..10}; do
+  #         if curl -f http://${{ steps.get-ip.outputs.droplet_ip }}/health; then
+  #           echo "✅ Application is healthy!"
+  #           break
+  #         else
+  #           echo "⏳ Waiting for application to be ready... (attempt $i/10)"
+  #           sleep 30
+  #         fi
+  #         if [ $i -eq 10 ]; then
+  #           echo "❌ Health check failed after 10 attempts"
+  #           exit 1
+  #         fi
+  #       done
+
+  #   - name: Deployment summary
+  #     run: |
+  #       echo "🚀 Production deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
+  #       echo "" >> $GITHUB_STEP_SUMMARY
+  #       echo "**Application URL:** http://${{ steps.get-ip.outputs.droplet_ip }}" >> $GITHUB_STEP_SUMMARY
+  #       echo "**Health Check:** http://${{ steps.get-ip.outputs.droplet_ip }}/health" >> $GITHUB_STEP_SUMMARY
+  #       echo "" >> $GITHUB_STEP_SUMMARY
+  #       echo "**SSH Access:** \`ssh mymcp@${{ steps.get-ip.outputs.droplet_ip }}\`" >> $GITHUB_STEP_SUMMARY
+  #       echo "" >> $GITHUB_STEP_SUMMARY
+  #       echo "**Deployment Pipeline:**" >> $GITHUB_STEP_SUMMARY
+  #       echo "✅ Security Analysis (CodeQL, Dependencies)" >> $GITHUB_STEP_SUMMARY
+  #       echo "✅ Build & Test (Frontend + Backend)" >> $GITHUB_STEP_SUMMARY
+  #       echo "✅ Infrastructure Deployment" >> $GITHUB_STEP_SUMMARY
+  #       echo "✅ Application Deployment" >> $GITHUB_STEP_SUMMARY

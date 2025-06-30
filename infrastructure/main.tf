@@ -99,7 +99,7 @@ resource "digitalocean_project_resources" "mymcp_resources" {
   resources = [
     digitalocean_droplet.app_server.urn,
     digitalocean_reserved_ip.app_ip.urn,
-    digitalocean_firewall.app_firewall.id,
+    # digitalocean_firewall.app_firewall.id,  # Firewall doesn't have URN format
     data.digitalocean_spaces_bucket.terraform_state.urn
   ]
 }
