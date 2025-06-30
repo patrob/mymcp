@@ -298,6 +298,61 @@ jobs:
         SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
       run: terraform init
 
+    - name: Import Existing Resources
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+        SPACES_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+        SPACES_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+        TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+        TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+      run: |
+        echo "🔍 Checking for existing resources to import..."
+        
+        # Import SSH key if it exists
+        echo "Checking for existing SSH key..."
+        SSH_KEY_ID=$(curl -s -H "Authorization: Bearer $TF_VAR_digitalocean_token" \
+          "https://api.digitalocean.com/v2/account/keys" | \
+          jq -r --arg pubkey "$TF_VAR_ssh_public_key" \
+          '.ssh_keys[] | select(.public_key == $pubkey) | .id')
+        
+        if [ "$SSH_KEY_ID" != "null" ] && [ "$SSH_KEY_ID" != "" ]; then
+          echo "✅ Found existing SSH key with ID: $SSH_KEY_ID"
+          terraform import digitalocean_ssh_key.main $SSH_KEY_ID || echo "⚠️  SSH key import failed (might already be in state)"
+        else
+          echo "ℹ️  No existing SSH key found, will create new one"
+        fi
+        
+        # Import firewall if it exists
+        echo "Checking for existing firewall..."
+        FIREWALL_ID=$(curl -s -H "Authorization: Bearer $TF_VAR_digitalocean_token" \
+          "https://api.digitalocean.com/v2/firewalls" | \
+          jq -r --arg name "mymcp-production-firewall" \
+          '.firewalls[] | select(.name == $name) | .id')
+        
+        if [ "$FIREWALL_ID" != "null" ] && [ "$FIREWALL_ID" != "" ]; then
+          echo "✅ Found existing firewall with ID: $FIREWALL_ID"
+          terraform import digitalocean_firewall.app_firewall $FIREWALL_ID || echo "⚠️  Firewall import failed (might already be in state)"
+        else
+          echo "ℹ️  No existing firewall found, will create new one"
+        fi
+        
+        # Import droplet if it exists
+        echo "Checking for existing droplet..."
+        DROPLET_ID=$(curl -s -H "Authorization: Bearer $TF_VAR_digitalocean_token" \
+          "https://api.digitalocean.com/v2/droplets" | \
+          jq -r --arg name "mymcp-production" \
+          '.droplets[] | select(.name == $name) | .id')
+        
+        if [ "$DROPLET_ID" != "null" ] && [ "$DROPLET_ID" != "" ]; then
+          echo "✅ Found existing droplet with ID: $DROPLET_ID"
+          terraform import digitalocean_droplet.app_server $DROPLET_ID || echo "⚠️  Droplet import failed (might already be in state)"
+        else
+          echo "ℹ️  No existing droplet found, will create new one"
+        fi
+        
+        echo "📋 Import process completed"
+
     - name: Terraform Plan
       id: plan
       env:
