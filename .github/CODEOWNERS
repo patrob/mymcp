@@ -1,0 +1,14 @@
+# Global code ownership
+* @patrob
+
+# Security and workflow files require explicit approval
+/.github/ @patrob
+/CLAUDE.md @patrob
+/DEVELOPMENT.md @patrob
+
+# Backend core files
+/OnParDev.MyMcp.Api/ @patrob
+/Directory.Packages.props @patrob
+
+# Frontend core files
+/OnParDev.MyMcp.Api/ClientApp/ @patrob
