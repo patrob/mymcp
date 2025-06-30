@@ -9,6 +9,7 @@
     "predev": "node aspnetcore-https.cjs && node aspnetcore-react.cjs && npm run generate-api",
     "dev": "rimraf ./dist && vite --port 5173",
     "build": "npm run generate-api && tsc -b && vite build",
+    "build:docker": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest --run",

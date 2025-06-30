@@ -8,7 +8,7 @@ RUN npm ci
 
 # Copy frontend source and build
 COPY OnParDev.MyMcp.Api/ClientApp/ ./
-RUN npm run build
+RUN npm run build:docker
 
 # Build stage for .NET backend
 FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS backend-build
