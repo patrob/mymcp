@@ -15,7 +15,7 @@ export default function Landing() {
           </p>
           <div className="space-x-4">
             <a 
-              href="/dashboard"
+              href="/sign-up"
               className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 inline-block"
             >
               Get Started
@@ -75,7 +75,7 @@ export default function Landing() {
             Join thousands of developers building the future of AI integrations.
           </p>
           <a 
-            href="/dashboard"
+            href="/sign-up"
             className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 inline-block"
           >
             Start Building Today

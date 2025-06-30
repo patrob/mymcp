@@ -78,6 +78,26 @@ else
 
 app.UseHttpsRedirection();
 
+// Apply security headers
+app.Use(async (context, next) =>
+{
+    // Content Security Policy for Clerk integration
+    var csp = "default-src 'self'; " +
+              "connect-src 'self' https://clerk-telemetry.com https://*.clerk.accounts.dev https://*.accounts.dev https://api.clerk.dev https://api.clerk.com https://clerk.com; " +
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+              "style-src 'self' 'unsafe-inline'; " +
+              "img-src 'self' data: https://*.clerk.accounts.dev https://*.accounts.dev; " +
+              "font-src 'self' data:; " +
+              "frame-src https://*.clerk.accounts.dev https://*.accounts.dev";
+    
+    context.Response.Headers.Append("Content-Security-Policy", csp);
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    
+    await next();
+});
+
 // Enable CORS
 app.UseCors(app.Environment.IsDevelopment() ? "Development" : "Production");
 

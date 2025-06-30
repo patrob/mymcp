@@ -4,6 +4,8 @@ import { ConfigurationProvider } from '@/contexts/ConfigurationContext'
 import { ProtectedLayout } from '@/components/layouts/ProtectedLayout'
 import Dashboard from '@/pages/Dashboard'
 import Landing from '@/pages/Landing'
+import SignUp from '@/pages/auth/SignUp'
+import SignIn from '@/pages/auth/SignIn'
 import { Toaster } from '@/components/ui/toaster'
 
 const queryClient = new QueryClient({
@@ -23,6 +25,10 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Landing />} />
+            
+            {/* Auth Routes */}
+            <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/sign-in" element={<SignIn />} />
             
             {/* Protected Routes */}
             <Route 
