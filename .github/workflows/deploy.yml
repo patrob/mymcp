@@ -438,6 +438,53 @@ jobs:
           scp -r . root@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/
           scp .env root@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/.env
 
+      - name: Setup Docker Environment
+        run: |
+          ssh root@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
+            echo "🔍 Checking Docker installation..."
+            
+            # Check if Docker is installed
+            if ! command -v docker &> /dev/null; then
+              echo "📦 Installing Docker..."
+              
+              # Update packages
+              apt-get update
+              
+              # Install Docker
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sh get-docker.sh
+              
+              # Start and enable Docker
+              systemctl enable docker
+              systemctl start docker
+              
+              echo "✅ Docker installed successfully"
+            else
+              echo "✅ Docker is already installed"
+              systemctl start docker || true
+            fi
+            
+            # Check if Docker Compose is installed
+            if ! command -v docker-compose &> /dev/null; then
+              echo "📦 Installing Docker Compose..."
+              
+              # Install Docker Compose
+              curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              chmod +x /usr/local/bin/docker-compose
+              
+              echo "✅ Docker Compose installed successfully"
+            else
+              echo "✅ Docker Compose is already installed"
+            fi
+            
+            # Verify installations
+            echo "🔍 Verifying installations:"
+            docker --version
+            docker-compose --version
+            
+            echo "✅ Docker environment ready"
+          EOF
+
       - name: Deploy application
         run: |
           ssh root@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
