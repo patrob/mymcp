@@ -11,7 +11,7 @@ resource "digitalocean_droplet" "app_server" {
   name      = "${var.project_name}-${var.environment}"
   region    = var.region
   size      = var.droplet_size
-  ssh_keys  = [local.ssh_key_id]
+  ssh_keys  = [digitalocean_ssh_key.main.id]
   user_data = local.cloud_init
 
   # Enable monitoring and backups
@@ -80,4 +80,19 @@ resource "digitalocean_reserved_ip" "app_ip" {
 resource "digitalocean_reserved_ip_assignment" "app_ip_assignment" {
   ip_address = digitalocean_reserved_ip.app_ip.ip_address
   droplet_id = digitalocean_droplet.app_server.id
+}
+
+# Get the "My MCP" project
+data "digitalocean_project" "mymcp" {
+  name = "My MCP"
+}
+
+# Assign resources to the project
+resource "digitalocean_project_resources" "mymcp_resources" {
+  project = data.digitalocean_project.mymcp.id
+  resources = [
+    digitalocean_droplet.app_server.urn,
+    digitalocean_reserved_ip.app_ip.urn,
+    digitalocean_firewall.app_firewall.id
+  ]
 }

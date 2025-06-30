@@ -291,23 +291,33 @@ jobs:
         terraform_version: ~1.0
 
     - name: Terraform Init
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
       run: terraform init
 
     - name: Terraform Plan
       id: plan
       env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
         TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       run: terraform plan -out=tfplan
 
     - name: Terraform Apply
       env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
         TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       run: terraform apply -auto-approve tfplan
 
     - name: Get outputs
       id: outputs
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
       run: |
         echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
         echo "ssh_connection=$(terraform output -raw ssh_connection)" >> $GITHUB_OUTPUT
@@ -340,9 +350,11 @@ jobs:
         else
           # Fallback: get from Terraform state
           cd infrastructure
-          terraform init
+          export AWS_ACCESS_KEY_ID="${{ secrets.SPACES_ACCESS_KEY_ID }}"
+          export AWS_SECRET_ACCESS_KEY="${{ secrets.SPACES_SECRET_ACCESS_KEY }}"
           export TF_VAR_digitalocean_token="${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
           export TF_VAR_ssh_public_key="${{ secrets.SSH_PUBLIC_KEY }}"
+          terraform init
           DROPLET_IP=$(terraform output -raw droplet_ip)
           echo "droplet_ip=${DROPLET_IP}" >> $GITHUB_OUTPUT
         fi
