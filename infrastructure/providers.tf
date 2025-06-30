@@ -10,7 +10,7 @@ terraform {
 
   # Remote state backend using DigitalOcean Spaces
   backend "s3" {
-    endpoint                    = "https://nyc3.digitaloceanspaces.com"
+    endpoint                    = "https://sfo3.digitaloceanspaces.com"
     bucket                      = "mymcp-terraform-state"
     key                         = "production/terraform.tfstate"
     region                     = "us-east-1" # Required but not used by DO Spaces

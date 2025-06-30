@@ -90,7 +90,7 @@ data "digitalocean_project" "mymcp" {
 # Reference the existing Spaces bucket
 data "digitalocean_spaces_bucket" "terraform_state" {
   name   = "mymcp-terraform-state"
-  region = "nyc3"
+  region = "sfo3"
 }
 
 # Assign resources to the project
