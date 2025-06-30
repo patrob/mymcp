@@ -430,23 +430,17 @@ jobs:
           echo "🔍 Testing SSH connectivity..."
           echo "Testing root access:"
           ssh -v -o ConnectTimeout=10 root@${{ steps.get-ip.outputs.droplet_ip }} "echo 'Root access works'" || echo "❌ Root access failed"
-          
-          echo "Testing mymcp user access:"
-          ssh -v -o ConnectTimeout=10 mymcp@${{ steps.get-ip.outputs.droplet_ip }} "echo 'User access works'" || echo "❌ User access failed"
-          
-          echo "Checking mymcp user setup:"
-          ssh root@${{ steps.get-ip.outputs.droplet_ip }} "id mymcp; ls -la /home/mymcp/.ssh/" || echo "❌ User check failed"
 
       - name: Copy files to server
         run: |
-          # Try with verbose output for debugging
-          ssh -v mymcp@${{ steps.get-ip.outputs.droplet_ip }} "mkdir -p /opt/mymcp"
-          scp -v -r . mymcp@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/
-          scp -v .env mymcp@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/.env
+          # Use root user for deployment
+          ssh root@${{ steps.get-ip.outputs.droplet_ip }} "mkdir -p /opt/mymcp"
+          scp -r . root@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/
+          scp .env root@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/.env
 
       - name: Deploy application
         run: |
-          ssh mymcp@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
+          ssh root@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
             cd /opt/mymcp
             
             # Stop existing containers
