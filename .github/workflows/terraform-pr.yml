@@ -44,7 +44,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         env:
-          TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+          TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         run: terraform plan -no-color
         continue-on-error: true
 

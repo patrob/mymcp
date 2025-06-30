@@ -19,7 +19,7 @@ variable "region" {
 variable "droplet_size" {
   description = "Size of the droplet"
   type        = string
-  default     = "s-1vcpu-1gb"  # $6/month droplet
+  default     = "s-1vcpu-1gb" # $6/month droplet
 }
 
 variable "project_name" {

@@ -44,7 +44,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         env:
-          TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+          TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         run: |
           if [ "${{ github.event.inputs.action }}" = "destroy" ]; then
             terraform plan -destroy -out=tfplan
@@ -54,7 +54,7 @@ jobs:
 
       - name: Terraform Apply
         env:
-          TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+          TF_VAR_digitalocean_token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         run: terraform apply -auto-approve tfplan
 
       - name: Get outputs

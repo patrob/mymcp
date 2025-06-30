@@ -7,17 +7,17 @@ locals {
 
 # Create the droplet
 resource "digitalocean_droplet" "app_server" {
-  image      = "ubuntu-22-04-x64"
-  name       = "${var.project_name}-${var.environment}"
-  region     = var.region
-  size       = var.droplet_size
-  ssh_keys   = [data.digitalocean_ssh_key.main.id]
-  user_data  = local.cloud_init
-  
+  image     = "ubuntu-22-04-x64"
+  name      = "${var.project_name}-${var.environment}"
+  region    = var.region
+  size      = var.droplet_size
+  ssh_keys  = [data.digitalocean_ssh_key.main.id]
+  user_data = local.cloud_init
+
   # Enable monitoring and backups
   monitoring = true
-  backups    = false  # Keep costs low - can enable later
-  
+  backups    = false # Keep costs low - can enable later
+
   tags = [
     "project:${var.project_name}",
     "environment:${var.environment}",

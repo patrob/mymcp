@@ -35,7 +35,7 @@ jobs:
         run: |
           # Setup Terraform
           terraform init
-          export TF_VAR_digitalocean_token="${{ secrets.DIGITALOCEAN_TOKEN }}"
+          export TF_VAR_digitalocean_token="${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
           DROPLET_IP=$(terraform output -raw droplet_ip)
           echo "droplet_ip=${DROPLET_IP}" >> $GITHUB_OUTPUT
 
