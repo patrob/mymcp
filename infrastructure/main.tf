@@ -93,12 +93,36 @@ data "digitalocean_spaces_bucket" "terraform_state" {
   region = "sfo3"
 }
 
+# Add domain to Digital Ocean DNS
+resource "digitalocean_domain" "mymcp_domain" {
+  name = "mymcp.online"
+}
+
+# DNS A record pointing to the reserved IP
+resource "digitalocean_record" "root_a" {
+  domain = digitalocean_domain.mymcp_domain.name
+  type   = "A"
+  name   = "@"
+  value  = digitalocean_reserved_ip.app_ip.ip_address
+  ttl    = 300
+}
+
+# DNS CNAME record for www subdomain
+resource "digitalocean_record" "www_cname" {
+  domain = digitalocean_domain.mymcp_domain.name
+  type   = "CNAME"
+  name   = "www"
+  value  = "@"
+  ttl    = 300
+}
+
 # Assign resources to the project
 resource "digitalocean_project_resources" "mymcp_resources" {
   project = data.digitalocean_project.mymcp.id
   resources = [
     digitalocean_droplet.app_server.urn,
     digitalocean_reserved_ip.app_ip.urn,
+    digitalocean_domain.mymcp_domain.urn,
     # digitalocean_firewall.app_firewall.id,  # Firewall doesn't have URN format
     data.digitalocean_spaces_bucket.terraform_state.urn
   ]
