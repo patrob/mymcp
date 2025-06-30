@@ -56,6 +56,3 @@ wwwroot/
 # Misc
 .DS_Store
 Thumbs.db
-
-# Azure Pipelines
-.azure-pipelines/
