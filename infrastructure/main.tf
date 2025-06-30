@@ -87,12 +87,19 @@ data "digitalocean_project" "mymcp" {
   name = "My MCP"
 }
 
+# Reference the existing Spaces bucket
+data "digitalocean_spaces_bucket" "terraform_state" {
+  name   = "mymcp-terraform-state"
+  region = "nyc3"
+}
+
 # Assign resources to the project
 resource "digitalocean_project_resources" "mymcp_resources" {
   project = data.digitalocean_project.mymcp.id
   resources = [
     digitalocean_droplet.app_server.urn,
     digitalocean_reserved_ip.app_ip.urn,
-    digitalocean_firewall.app_firewall.id
+    digitalocean_firewall.app_firewall.id,
+    data.digitalocean_spaces_bucket.terraform_state.urn
   ]
 }
