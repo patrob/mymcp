@@ -5,6 +5,8 @@ paths-ignore:
   - "**/node_modules/**"
   - "**/bin/**"
   - "**/obj/**"
+  - "**/aspnetcore-https.cjs"
+  - "**/aspnetcore-react.cjs"
 
 queries:
   - name: security-extended
