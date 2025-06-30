@@ -1,0 +1,13 @@
+name: "CodeQL Configuration"
+
+paths-ignore:
+  - "OnParDev.MyMcp.Api/wwwroot/assets/**"
+  - "**/node_modules/**"
+  - "**/bin/**"
+  - "**/obj/**"
+
+queries:
+  - name: security-extended
+    uses: security-extended
+  - name: security-and-quality
+    uses: security-and-quality

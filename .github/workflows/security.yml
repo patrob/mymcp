@@ -28,8 +28,7 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
-        # Use default queries + security-extended for more comprehensive scanning
-        queries: security-extended,security-and-quality
+        config-file: ./.github/codeql/codeql-config.yml
     
     # For C# analysis
     - name: Setup .NET
