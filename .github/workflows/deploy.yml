@@ -23,7 +23,7 @@ permissions:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
 
 jobs:
   # Security Analysis Jobs (Parallel)
