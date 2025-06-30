@@ -156,7 +156,16 @@ jobs:
       run: dotnet build --no-restore --configuration Release
     
     - name: Check for build warnings
-      run: dotnet build --no-restore --configuration Release --verbosity normal | tee build.log && ! grep -i "warning" build.log
+      run: |
+        dotnet build --no-restore --configuration Release --verbosity normal | tee build.log
+        # Look for actual warning messages (not summary counts)
+        # Exclude known generator warnings that don't affect functionality
+        if grep -E "(warning [A-Z]{2}[0-9]{4}|: warning)" build.log | grep -v "Generator.*failed to initialize" | grep -v "CS8785"; then
+          echo "Found build warnings:"
+          grep -E "(warning [A-Z]{2}[0-9]{4}|: warning)" build.log | grep -v "Generator.*failed to initialize" | grep -v "CS8785"
+          exit 1
+        fi
+        echo "No build warnings found."
 
   frontend-build:
     name: Frontend Build

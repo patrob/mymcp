@@ -1,5 +1,5 @@
 import { SignUp as ClerkSignUp } from '@clerk/clerk-react'
-import { useConfiguration } from '@/contexts/ConfigurationContext'
+import { useConfiguration } from '@/hooks/useConfiguration'
 import { AuthLayout } from '@/components/layouts/AuthLayout'
 import { Link } from 'react-router-dom'
 

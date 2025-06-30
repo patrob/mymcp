@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
-import { useConfiguration } from '@/contexts/ConfigurationContext'
+import { useConfiguration } from '@/hooks/useConfiguration'
 
 interface PublicLayoutProps {
   children: ReactNode

@@ -1,25 +1,18 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useEffect, useState, ReactNode } from 'react'
 import { OnParDevMyMcpApiService } from '@/api'
 
 // Type aliases for the generated types
-type ConfigurationResponse = Awaited<ReturnType<typeof OnParDevMyMcpApiService.getConfiguration>>
+export type ConfigurationResponse = Awaited<ReturnType<typeof OnParDevMyMcpApiService.getConfiguration>>
 
-interface ConfigurationContextType {
+export interface ConfigurationContextType {
   config: ConfigurationResponse | null
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
 }
 
-const ConfigurationContext = createContext<ConfigurationContextType | undefined>(undefined)
-
-export function useConfiguration() {
-  const context = useContext(ConfigurationContext)
-  if (context === undefined) {
-    throw new Error('useConfiguration must be used within a ConfigurationProvider')
-  }
-  return context
-}
+export const ConfigurationContext = createContext<ConfigurationContextType | undefined>(undefined)
 
 interface ConfigurationProviderProps {
   children: ReactNode

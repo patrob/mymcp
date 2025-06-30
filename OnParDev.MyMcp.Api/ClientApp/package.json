@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "prestart": "node aspnetcore-https.cjs && node aspnetcore-react.cjs && npm run generate-api",
-    "start": "rimraf ./build && vite --port 5173",
+    "start": "rimraf ./dist && vite --port 5173",
     "predev": "node aspnetcore-https.cjs && node aspnetcore-react.cjs && npm run generate-api",
-    "dev": "rimraf ./build && vite --port 5173",
+    "dev": "rimraf ./dist && vite --port 5173",
     "build": "npm run generate-api && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

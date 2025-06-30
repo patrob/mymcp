@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { PublicLayout } from './PublicLayout'
-import { useConfiguration } from '@/contexts/ConfigurationContext'
+import { useConfiguration } from '@/hooks/useConfiguration'
 import type { ConfigurationResponse } from '@/api/models/ConfigurationResponse'
 
-// Mock the configuration context
-vi.mock('@/contexts/ConfigurationContext', () => ({
+// Mock the configuration hook
+vi.mock('@/hooks/useConfiguration', () => ({
   useConfiguration: vi.fn()
 }))
 
