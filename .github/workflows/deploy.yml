@@ -378,18 +378,71 @@ jobs:
           CLERK_AUTHORITY=${{ secrets.CLERK_AUTHORITY }}
           EOF
 
+      - name: Wait for droplet readiness
+        run: |
+          echo "⏳ Waiting for droplet to be ready..."
+          for i in {1..10}; do
+            if nc -z -w5 ${{ steps.get-ip.outputs.droplet_ip }} 22; then
+              echo "✅ SSH port is open"
+              # Give cloud-init extra time to complete user setup
+              echo "⏳ Waiting additional 2 minutes for cloud-init to complete user setup..."
+              sleep 120
+              break
+            else
+              echo "⏳ Waiting for SSH to be available... (attempt $i/10)"
+              sleep 30
+            fi
+            if [ $i -eq 10 ]; then
+              echo "❌ SSH port never became available"
+              exit 1
+            fi
+          done
+
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ steps.get-ip.outputs.droplet_ip }} >> ~/.ssh/known_hosts
+          
+          # Debug SSH key format and validate
+          echo "🔍 SSH key info:"
+          file ~/.ssh/id_rsa
+          head -1 ~/.ssh/id_rsa
+          
+          # Validate key pair
+          echo "🔍 Validating SSH key pair..."
+          ssh-keygen -y -f ~/.ssh/id_rsa > /tmp/derived_pubkey.pub
+          echo "Public key from private key:"
+          cat /tmp/derived_pubkey.pub
+          echo "Expected public key:"
+          echo "${{ secrets.SSH_PUBLIC_KEY }}"
+          
+          if [ "$(cat /tmp/derived_pubkey.pub)" = "${{ secrets.SSH_PUBLIC_KEY }}" ]; then
+            echo "✅ SSH key pair is valid"
+          else
+            echo "❌ SSH key pair mismatch!"
+            exit 1
+          fi
+
+      - name: Test SSH connectivity
+        run: |
+          echo "🔍 Testing SSH connectivity..."
+          echo "Testing root access:"
+          ssh -v -o ConnectTimeout=10 root@${{ steps.get-ip.outputs.droplet_ip }} "echo 'Root access works'" || echo "❌ Root access failed"
+          
+          echo "Testing mymcp user access:"
+          ssh -v -o ConnectTimeout=10 mymcp@${{ steps.get-ip.outputs.droplet_ip }} "echo 'User access works'" || echo "❌ User access failed"
+          
+          echo "Checking mymcp user setup:"
+          ssh root@${{ steps.get-ip.outputs.droplet_ip }} "id mymcp; ls -la /home/mymcp/.ssh/" || echo "❌ User check failed"
 
       - name: Copy files to server
         run: |
-          ssh mymcp@${{ steps.get-ip.outputs.droplet_ip }} "mkdir -p /opt/mymcp"
-          scp -r . mymcp@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/
-          scp .env mymcp@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/.env
+          # Try with verbose output for debugging
+          ssh -v mymcp@${{ steps.get-ip.outputs.droplet_ip }} "mkdir -p /opt/mymcp"
+          scp -v -r . mymcp@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/
+          scp -v .env mymcp@${{ steps.get-ip.outputs.droplet_ip }}:/opt/mymcp/.env
 
       - name: Deploy application
         run: |
