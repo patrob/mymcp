@@ -21,11 +21,9 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    # Add assignees and reviewers for dependency PRs
+    # Add assignees for dependency PRs
     assignees:
-      - "probinson"
-    reviewers:
-      - "probinson"
+      - "patrob"
     # Add labels to dependency PRs
     labels:
       - "dependencies"
@@ -58,11 +56,9 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    # Add assignees and reviewers for dependency PRs
+    # Add assignees for dependency PRs
     assignees:
-      - "probinson"
-    reviewers:
-      - "probinson"
+      - "patrob"
     # Add labels to dependency PRs
     labels:
       - "dependencies"
@@ -88,11 +84,9 @@ updates:
       github-actions:
         patterns:
           - "*"
-    # Add assignees and reviewers for GitHub Actions PRs
+    # Add assignees for GitHub Actions PRs
     assignees:
-      - "probinson"
-    reviewers:
-      - "probinson"
+      - "patrob"
     # Add labels to GitHub Actions PRs
     labels:
       - "dependencies"
