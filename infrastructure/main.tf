@@ -11,7 +11,7 @@ resource "digitalocean_droplet" "app_server" {
   name      = "${var.project_name}-${var.environment}"
   region    = var.region
   size      = var.droplet_size
-  ssh_keys  = [data.digitalocean_ssh_key.main.id]
+  ssh_keys  = [digitalocean_ssh_key.main.id]
   user_data = local.cloud_init
 
   # Enable monitoring and backups

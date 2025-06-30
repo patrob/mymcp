@@ -16,7 +16,8 @@ provider "digitalocean" {
   token = var.digitalocean_token
 }
 
-# Data source for SSH key
-data "digitalocean_ssh_key" "main" {
-  name = var.ssh_key_name
+# Create SSH key for server access
+resource "digitalocean_ssh_key" "main" {
+  name       = "${var.project_name}-${var.environment}-key"
+  public_key = var.ssh_public_key
 }

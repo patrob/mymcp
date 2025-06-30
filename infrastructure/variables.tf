@@ -4,10 +4,10 @@ variable "digitalocean_token" {
   sensitive   = true
 }
 
-variable "ssh_key_name" {
-  description = "Name of the SSH key in Digital Ocean"
+variable "ssh_public_key" {
+  description = "Public SSH key content for server access"
   type        = string
-  default     = "main"
+  sensitive   = true
 }
 
 variable "region" {
