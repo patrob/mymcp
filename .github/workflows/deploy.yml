@@ -657,14 +657,14 @@ jobs:
               echo "❌ Health endpoint failed after 10 attempts"
               echo "🔍 Final diagnostic check..."
               ssh root@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
-                cd /opt/mymcp
-                echo "Container status:"
-                docker-compose -f docker-compose.production.yml ps
-                echo "Recent application logs:"
-                docker-compose -f docker-compose.production.yml logs --tail=30 app
-                echo "Testing direct health endpoint:"
-                curl -v http://localhost:8080/api/v1/health || echo "Direct health check failed"
-              EOF
+cd /opt/mymcp
+echo "Container status:"
+docker-compose -f docker-compose.production.yml ps
+echo "Recent application logs:"
+docker-compose -f docker-compose.production.yml logs --tail=30 app
+echo "Testing direct health endpoint:"
+curl -v http://localhost:8080/api/v1/health || echo "Direct health check failed"
+EOF
               exit 1
             fi
           done
