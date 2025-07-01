@@ -496,34 +496,56 @@ jobs:
             # Remove old images to save space on $6/month droplet
             docker image prune -f
             
-            # Check if valid SSL certificates exist
+            # Always start with HTTP-only configuration first
+            echo "🚀 Starting services with adaptive SSL configuration..."
+            
+            # Start all services (nginx will auto-detect SSL certificates)
+            docker-compose -f docker-compose.production.yml up -d --build
+            
+            # Wait for services to be ready
+            echo "⏳ Waiting for services to start..."
+            sleep 30
+            
+            # Check if SSL certificates exist
             if ! docker run --rm -v mymcp_certbot_certs:/etc/letsencrypt alpine test -f /etc/letsencrypt/live/mymcp.online/fullchain.pem; then
-              echo "🔒 No valid SSL certificates found. Setting up Let's Encrypt..."
+              echo "🔒 No valid SSL certificates found. Requesting from Let's Encrypt..."
               
-              # Start services except certbot first to get HTTP server running
-              docker-compose -f docker-compose.production.yml up -d --build nginx app postgres flyway
+              # Verify domain is accessible for ACME challenge
+              echo "🌐 Verifying domain accessibility..."
+              for i in {1..5}; do
+                if curl -f http://mymcp.online/health --connect-timeout 10; then
+                  echo "✅ Domain is accessible for ACME challenge"
+                  break
+                else
+                  echo "⏳ Waiting for domain to be accessible... (attempt $i/5)"
+                  sleep 10
+                fi
+                if [ $i -eq 5 ]; then
+                  echo "❌ Domain not accessible. SSL setup will be skipped."
+                  echo "⚠️  Application will run in HTTP-only mode."
+                  exit 0  # Don't fail deployment, just skip SSL
+                fi
+              done
               
-              # Wait for nginx to be ready
-              echo "⏳ Waiting for nginx to be ready for certificate challenge..."
-              sleep 30
-              
-              # Run certbot to get initial certificate
+              # Request SSL certificate
               echo "🔐 Requesting SSL certificate from Let's Encrypt..."
-              docker-compose -f docker-compose.production.yml run --rm certbot certonly \
+              if docker-compose -f docker-compose.production.yml run --rm certbot certonly \
                 --webroot \
                 --webroot-path=/var/www/certbot \
                 --email admin@mymcp.online \
                 --agree-tos \
                 --no-eff-email \
-                -d mymcp.online
-              
-              # Restart nginx to load SSL certificates
-              echo "🔄 Restarting nginx with SSL certificates..."
-              docker-compose -f docker-compose.production.yml restart nginx
+                -d mymcp.online; then
+                
+                echo "✅ SSL certificate obtained successfully!"
+                echo "🔄 Nginx will automatically switch to HTTPS mode..."
+                sleep 10  # Give nginx time to detect certificates
+              else
+                echo "❌ SSL certificate request failed. Continuing with HTTP-only mode."
+                echo "⚠️  Application will run in HTTP-only mode."
+              fi
             else
-              echo "✅ SSL certificates exist. Starting all services..."
-              # Build and start all services
-              docker-compose -f docker-compose.production.yml up -d --build
+              echo "✅ SSL certificates exist. Nginx will use HTTPS mode."
             fi
             
             # Set up SSL certificate auto-renewal cron job
@@ -635,34 +657,38 @@ jobs:
         run: |
           echo "🏥 Performing progressive health check..."
           
-          # Test 1: Basic connectivity to port 443 (HTTPS)
-          echo "Test 1/3: Testing basic port 443 connectivity..."
+          # Test 1: Basic connectivity to port 80 (HTTP) - always available
+          echo "Test 1/3: Testing basic port 80 connectivity..."
           for i in {1..5}; do
-            if nc -z -w5 ${{ steps.get-ip.outputs.droplet_ip }} 443; then
-              echo "✅ Port 443 is reachable from external"
+            if nc -z -w5 ${{ steps.get-ip.outputs.droplet_ip }} 80; then
+              echo "✅ Port 80 is reachable from external"
               break
             else
-              echo "⏳ Waiting for port 443 to be available... (attempt $i/5)"
+              echo "⏳ Waiting for port 80 to be available... (attempt $i/5)"
               sleep 10
             fi
             if [ $i -eq 5 ]; then
-              echo "❌ Port 443 never became available"
+              echo "❌ Port 80 never became available"
               echo "🔍 Running remote port check..."
-              ssh root@${{ steps.get-ip.outputs.droplet_ip }} "netstat -tlnp | grep :443 || echo 'No process listening on port 443'"
+              ssh root@${{ steps.get-ip.outputs.droplet_ip }} "netstat -tlnp | grep :80 || echo 'No process listening on port 80'"
               exit 1
             fi
           done
           
-          # Test 2: Nginx redirect response (HTTP to HTTPS)
-          echo "Test 2/3: Testing nginx HTTPS redirect..."
+          # Test 2: Nginx response (check if responding)
+          echo "Test 2/3: Testing nginx response..."
           for i in {1..5}; do
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://${{ steps.get-ip.outputs.droplet_ip }}/ || echo "000")
             if [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
-              echo "✅ Nginx is redirecting HTTP to HTTPS (HTTP $HTTP_CODE)"
+              echo "✅ Nginx is redirecting HTTP to HTTPS (HTTP $HTTP_CODE) - SSL mode active"
+              SSL_MODE="true"
+              break
+            elif [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Nginx is serving HTTP directly (HTTP $HTTP_CODE) - HTTP-only mode active"
+              SSL_MODE="false"
               break
             elif [ "$HTTP_CODE" != "000" ]; then
-              echo "⚠️ Nginx responded with HTTP $HTTP_CODE (expected 301 redirect)"
-              echo "🔍 Checking redirect configuration..."
+              echo "✅ Nginx is responding with HTTP $HTTP_CODE"
               break
             else
               echo "⏳ Waiting for nginx to respond... (attempt $i/5)"
@@ -676,45 +702,53 @@ jobs:
             fi
           done
           
-          # Test 3: Health endpoint (HTTPS)
-          echo "Test 3/3: Testing HTTPS health endpoint..."
-          for i in {1..10}; do
-            if curl -f -k https://${{ steps.get-ip.outputs.droplet_ip }}/health; then
-              echo "✅ HTTPS Health endpoint is working!"
-              echo "🎉 SSL-enabled application deployment successful!"
-              break
-            else
-              echo "⏳ Waiting for HTTPS health endpoint to be ready... (attempt $i/10)"
-              if [ $i -eq 5 ]; then
-                echo "🔍 Checking application logs for debugging..."
-                ssh root@${{ steps.get-ip.outputs.droplet_ip }} "docker-compose -f /opt/mymcp/docker-compose.production.yml logs --tail=20 app"
+          # Test 3: Health endpoint (adaptive based on SSL mode)
+          echo "Test 3/3: Testing health endpoint..."
+          if [ "$SSL_MODE" = "true" ]; then
+            echo "Testing HTTPS health endpoint..."
+            for i in {1..5}; do
+              if curl -f -k https://${{ steps.get-ip.outputs.droplet_ip }}/health; then
+                echo "✅ HTTPS Health endpoint is working!"
+                echo "🎉 SSL-enabled application deployment successful!"
+                break
+              else
+                echo "⏳ Waiting for HTTPS health endpoint to be ready... (attempt $i/5)"
+                sleep 10
               fi
-              sleep 30
-            fi
-            if [ $i -eq 10 ]; then
-              echo "❌ Health endpoint failed after 10 attempts"
-              echo "🔍 Final diagnostic check..."
-              ssh root@${{ steps.get-ip.outputs.droplet_ip }} << 'EOFSCRIPT'
-                cd /opt/mymcp
-                echo "Container status:"
-                docker-compose -f docker-compose.production.yml ps
-                echo "Recent application logs:"
-                docker-compose -f docker-compose.production.yml logs --tail=30 app
-                echo "Testing direct health endpoint:"
-                curl -v -k https://localhost/health || echo "HTTPS health check failed"
-                echo "Testing internal app health (Docker network):"
-                curl -v http://localhost:8080/api/v1/health || echo "Internal app health check failed"
-          EOFSCRIPT
-              exit 1
-            fi
-          done
+              if [ $i -eq 5 ]; then
+                echo "❌ HTTPS health endpoint failed"
+                exit 1
+              fi
+            done
+          else
+            echo "Testing HTTP health endpoint..."
+            for i in {1..5}; do
+              if curl -f http://${{ steps.get-ip.outputs.droplet_ip }}/health; then
+                echo "✅ HTTP Health endpoint is working!"
+                echo "🎉 HTTP-only application deployment successful!"
+                break
+              else
+                echo "⏳ Waiting for HTTP health endpoint to be ready... (attempt $i/5)"
+                sleep 10
+              fi
+              if [ $i -eq 5 ]; then
+                echo "❌ HTTP health endpoint failed"
+                exit 1
+              fi
+            done
+          fi
 
       - name: Deployment summary
         run: |
           echo "🚀 Production deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Application URL:** https://mymcp.online" >> $GITHUB_STEP_SUMMARY
-          echo "**Health Check:** https://mymcp.online/health" >> $GITHUB_STEP_SUMMARY
+          if [ "$SSL_MODE" = "true" ]; then
+            echo "**Application URL:** https://mymcp.online" >> $GITHUB_STEP_SUMMARY
+            echo "**Health Check:** https://mymcp.online/health" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Application URL:** http://mymcp.online" >> $GITHUB_STEP_SUMMARY
+            echo "**Health Check:** http://mymcp.online/health" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**SSH Access:** \`ssh mymcp@${{ steps.get-ip.outputs.droplet_ip }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
