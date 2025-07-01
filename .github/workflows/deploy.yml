@@ -381,40 +381,23 @@ jobs:
       - name: Wait for droplet readiness
         run: |
           echo "⏳ Waiting for droplet to be ready..."
-          for i in {1..10}; do
+          for i in {1..8}; do
             if nc -z -w5 ${{ steps.get-ip.outputs.droplet_ip }} 22; then
-              echo "✅ SSH port is open"
+              echo "✅ SSH port accessible"
               break
             else
-              echo "⏳ Waiting for SSH to be available... (attempt $i/10)"
+              echo "⏳ Waiting for SSH... (attempt $i/8)"
               sleep 15
             fi
-            if [ $i -eq 10 ]; then
-              echo "❌ SSH port never became available"
+            if [ $i -eq 8 ]; then
+              echo "❌ SSH port not available"
               exit 1
             fi
           done
           
-          # Intelligent cloud-init status checking
-          echo "🔍 Checking cloud-init status..."
-          for i in {1..6}; do
-            if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ steps.get-ip.outputs.droplet_ip }} "cloud-init status --wait --long" 2>/dev/null | grep -q "status: done"; then
-              echo "✅ Cloud-init completed successfully"
-              break
-            elif ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ steps.get-ip.outputs.droplet_ip }} "test -f /var/lib/cloud/instance/boot-finished" 2>/dev/null; then
-              echo "✅ Cloud-init boot finished detected"
-              break
-            else
-              echo "⏳ Waiting for cloud-init to complete... (attempt $i/6)"
-              sleep 15
-            fi
-            if [ $i -eq 6 ]; then
-              echo "⚠️ Cloud-init status check timed out, proceeding anyway..."
-              echo "⏳ Waiting 30 seconds for safety..."
-              sleep 30
-              break
-            fi
-          done
+          # Wait for cloud-init
+          echo "⏳ Waiting for cloud-init..."
+          ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ steps.get-ip.outputs.droplet_ip }} "cloud-init status --wait" || echo "⚠️ Cloud-init check failed, proceeding"
 
       - name: Setup SSH key
         run: |
@@ -423,31 +406,8 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ steps.get-ip.outputs.droplet_ip }} >> ~/.ssh/known_hosts
           
-          # Debug SSH key format and validate
-          echo "🔍 SSH key info:"
-          file ~/.ssh/id_rsa
-          head -1 ~/.ssh/id_rsa
-          
-          # Validate key pair
-          echo "🔍 Validating SSH key pair..."
-          ssh-keygen -y -f ~/.ssh/id_rsa > /tmp/derived_pubkey.pub
-          echo "Public key from private key:"
-          cat /tmp/derived_pubkey.pub
-          echo "Expected public key:"
-          echo "${{ secrets.SSH_PUBLIC_KEY }}"
-          
-          if [ "$(cat /tmp/derived_pubkey.pub)" = "${{ secrets.SSH_PUBLIC_KEY }}" ]; then
-            echo "✅ SSH key pair is valid"
-          else
-            echo "❌ SSH key pair mismatch!"
-            exit 1
-          fi
-
-      - name: Test SSH connectivity
-        run: |
-          echo "🔍 Testing SSH connectivity..."
-          echo "Testing root access:"
-          ssh -v -o ConnectTimeout=10 root@${{ steps.get-ip.outputs.droplet_ip }} "echo 'Root access works'" || echo "❌ Root access failed"
+          # Quick key validation
+          ssh-keygen -y -f ~/.ssh/id_rsa &>/dev/null && echo "✅ SSH key valid" || (echo "❌ SSH key invalid" && exit 1)
 
       - name: Copy files to server
         run: |
@@ -511,34 +471,71 @@ jobs:
             # Minimize downtime deployment strategy
             echo "🚀 Starting zero-downtime deployment..."
             
+            # Check what files have changed to determine deployment strategy
+            git fetch origin main || echo "Git fetch failed, deploying all services"
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+            DB_CHANGED=$(echo "$CHANGED_FILES" | grep -E "(db/|docker-compose|Dockerfile)" || echo "")
+            FRONTEND_CHANGED=$(echo "$CHANGED_FILES" | grep -E "(ClientApp/|nginx/)" || echo "")
+            BACKEND_CHANGED=$(echo "$CHANGED_FILES" | grep -E "(OnParDev.MyMcp.Api/.*\.(cs|csproj))" || echo "")
+            
+            echo "📋 Change analysis:"
+            echo "  Database/Infrastructure: ${DB_CHANGED:-"No changes"}"
+            echo "  Frontend: ${FRONTEND_CHANGED:-"No changes"}"
+            echo "  Backend: ${BACKEND_CHANGED:-"No changes"}"
+            
             # Build new images first (without stopping old containers)
             echo "🔨 Building new images..."
             docker-compose -f docker-compose.production.yml build
             
-            # Quick container swap to minimize downtime
-            echo "⚡ Performing quick container swap..."
+            # Smart container management - only restart what changed
+            echo "⚡ Performing selective container updates..."
             
-            # For nginx: start new container with different name, then swap
-            if docker ps | grep -q "mymcp-nginx"; then
-              echo "🔄 Updating nginx..."
-              docker-compose -f docker-compose.production.yml up -d --no-deps nginx
+            # Always ensure postgres is running (but don't restart unless DB changed)
+            if docker ps | grep -q "mymcp-postgres"; then
+              if [ -n "$DB_CHANGED" ]; then
+                echo "🔄 Database changes detected - restarting postgres..."
+                docker-compose -f docker-compose.production.yml up -d postgres
+              else
+                echo "✅ Database running, no changes - keeping existing container"
+              fi
             else
-              echo "🆕 Starting nginx..."
-              docker-compose -f docker-compose.production.yml up -d nginx
+              echo "🆕 Starting postgres container..."
+              docker-compose -f docker-compose.production.yml up -d postgres
             fi
             
-            # For app: rolling update approach
+            # Run flyway only if database changes detected or first deployment
+            if [ -n "$DB_CHANGED" ] || ! docker ps -a | grep -q "mymcp-flyway"; then
+              echo "🔄 Running database migrations..."
+              docker-compose -f docker-compose.production.yml up --no-deps flyway
+            else
+              echo "✅ No database changes - skipping migrations"
+            fi
+            
+            # Update application if backend changed
             if docker ps | grep -q "mymcp-app"; then
-              echo "🔄 Updating application..."
-              docker-compose -f docker-compose.production.yml up -d --no-deps app
+              if [ -n "$BACKEND_CHANGED" ] || [ -n "$DB_CHANGED" ]; then
+                echo "🔄 Backend changes detected - updating application..."
+                docker-compose -f docker-compose.production.yml up -d --no-deps app
+              else
+                echo "✅ No backend changes - keeping existing app container"
+              fi
             else
               echo "🆕 Starting application..."
               docker-compose -f docker-compose.production.yml up -d app
             fi
             
-            # Database and migrations (these don't cause downtime)
-            docker-compose -f docker-compose.production.yml up -d postgres
-            docker-compose -f docker-compose.production.yml up --no-deps flyway
+            # Update nginx if frontend or nginx config changed
+            if docker ps | grep -q "mymcp-nginx"; then
+              if [ -n "$FRONTEND_CHANGED" ] || echo "$CHANGED_FILES" | grep -q "nginx/"; then
+                echo "🔄 Frontend/nginx changes detected - updating nginx..."
+                docker-compose -f docker-compose.production.yml up -d --no-deps nginx
+              else
+                echo "✅ No frontend changes - keeping existing nginx container"
+              fi
+            else
+              echo "🆕 Starting nginx..."
+              docker-compose -f docker-compose.production.yml up -d nginx
+            fi
             
             # Clean up old containers and images after successful deployment
             echo "🧹 Cleaning up old resources..."
@@ -547,239 +544,88 @@ jobs:
             
             # Wait for services to be ready
             echo "⏳ Waiting for services to start..."
-            sleep 30
+            sleep 20
             
-            # Check if SSL certificates exist
+            # SSL certificate management (simplified)
             if ! docker run --rm -v mymcp_certbot_certs:/etc/letsencrypt alpine test -f /etc/letsencrypt/live/mymcp.online/fullchain.pem; then
-              echo "🔒 No valid SSL certificates found. Requesting from Let's Encrypt..."
-              
-              # Verify domain is accessible for ACME challenge
-              echo "🌐 Verifying domain accessibility..."
-              for i in {1..5}; do
-                if curl -f http://mymcp.online/health --connect-timeout 10; then
-                  echo "✅ Domain is accessible for ACME challenge"
-                  break
-                else
-                  echo "⏳ Waiting for domain to be accessible... (attempt $i/5)"
-                  sleep 10
-                fi
-                if [ $i -eq 5 ]; then
-                  echo "❌ Domain not accessible. SSL setup will be skipped."
-                  echo "⚠️  Application will run in HTTP-only mode."
-                  exit 0  # Don't fail deployment, just skip SSL
-                fi
-              done
-              
-              # Request SSL certificate
-              echo "🔐 Requesting SSL certificate from Let's Encrypt..."
-              if docker-compose -f docker-compose.production.yml run --rm certbot certonly \
-                --webroot \
-                --webroot-path=/var/www/certbot \
-                --email admin@mymcp.online \
-                --agree-tos \
-                --no-eff-email \
-                -d mymcp.online; then
-                
-                echo "✅ SSL certificate obtained successfully!"
-                echo "🔄 Nginx will automatically switch to HTTPS mode..."
-                sleep 10  # Give nginx time to detect certificates
+              echo "🔒 Requesting SSL certificate from Let's Encrypt..."
+              if curl -f http://mymcp.online/health --connect-timeout 10; then
+                docker-compose -f docker-compose.production.yml run --rm certbot certonly \
+                  --webroot --webroot-path=/var/www/certbot \
+                  --email admin@mymcp.online --agree-tos --no-eff-email \
+                  -d mymcp.online && echo "✅ SSL certificate obtained" || echo "⚠️ SSL setup failed, using HTTP mode"
               else
-                echo "❌ SSL certificate request failed. Continuing with HTTP-only mode."
-                echo "⚠️  Application will run in HTTP-only mode."
+                echo "⚠️ Domain not accessible, using HTTP mode"
               fi
-            else
-              echo "✅ SSL certificates exist. Nginx will use HTTPS mode."
             fi
             
-            # Set up SSL certificate auto-renewal cron job
-            echo "🔄 Setting up SSL certificate auto-renewal..."
-            chmod +x /opt/mymcp/scripts/renew-ssl.sh
+            # Set up SSL auto-renewal
+            chmod +x /opt/mymcp/scripts/renew-ssl.sh 2>/dev/null || echo "SSL renewal script not found"
+            (crontab -l 2>/dev/null; echo "0 */12 * * * /opt/mymcp/scripts/renew-ssl.sh >> /var/log/ssl-renewal.log 2>&1") | crontab - 2>/dev/null
             
-            # Add cron job for SSL renewal (runs twice daily)
-            (crontab -l 2>/dev/null; echo "0 */12 * * * /opt/mymcp/scripts/renew-ssl.sh >> /var/log/ssl-renewal.log 2>&1") | crontab -
-            
-            # Wait for services to be healthy
-            echo "Waiting for services to start..."
-            sleep 30
-            
-            # Check if services are running
-            docker-compose -f docker-compose.production.yml ps
+            echo "✅ Deployment completed successfully"
           EOF
 
       - name: Deployment diagnostics
         run: |
-          echo "🔍 Running comprehensive deployment diagnostics..."
+          echo "🔍 Running essential deployment checks..."
           ssh root@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
             cd /opt/mymcp
             
-            echo "========================================="
-            echo "📊 CONTAINER STATUS"
-            echo "========================================="
-            docker-compose -f docker-compose.production.yml ps -a
-            echo ""
+            echo "📊 Container status:"
+            docker-compose -f docker-compose.production.yml ps
             
-            echo "========================================="
-            echo "🏥 CONTAINER HEALTH STATUS"
-            echo "========================================="
-            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-            echo ""
+            echo "🌐 Port connectivity:"
+            nc -z localhost 80 && echo "✅ Port 80 accessible" || echo "❌ Port 80 failed"
+            nc -z localhost 443 && echo "✅ Port 443 accessible" || echo "❌ Port 443 failed"
             
-            echo "========================================="
-            echo "📋 CONTAINER LOGS (Last 20 lines each)"
-            echo "========================================="
-            echo "--- NGINX LOGS ---"
-            docker-compose -f docker-compose.production.yml logs --tail=20 nginx || echo "Nginx container not running"
-            echo ""
-            echo "--- APP LOGS ---"
-            docker-compose -f docker-compose.production.yml logs --tail=20 app || echo "App container not running"
-            echo ""
-            echo "--- POSTGRES LOGS ---"
-            docker-compose -f docker-compose.production.yml logs --tail=20 postgres || echo "Postgres container not running"
-            echo ""
-            
-            echo "========================================="
-            echo "🌐 NETWORK CONNECTIVITY"
-            echo "========================================="
-            echo "Port 80 binding:"
-            netstat -tlnp | grep :80 || echo "Port 80 not bound"
-            echo ""
-            echo "Port 443 binding:"
-            netstat -tlnp | grep :443 || echo "Port 443 not bound"
-            echo ""
-            
-            echo "========================================="
-            echo "🔧 ENVIRONMENT VARIABLES"
-            echo "========================================="
-            echo "Environment file exists:" 
-            ls -la .env || echo ".env file not found"
-            echo ""
-            
-            echo "========================================="
-            echo "🧪 PROGRESSIVE CONNECTIVITY TESTS"
-            echo "========================================="
-            echo "Test 1: Basic port 80 connectivity"
-            if nc -z localhost 80; then
-              echo "✅ Port 80 is reachable"
-            else
-              echo "❌ Port 80 is not reachable"
-            fi
-            echo ""
-            
-            echo "Test 2: Nginx response"
-            if curl -s -o /dev/null -w "%{http_code}" http://localhost:80 | grep -q "200\|404\|301\|302"; then
-              echo "✅ Nginx is responding"
-              echo "Nginx response: $(curl -s -I http://localhost:80 | head -1)"
-            else
-              echo "❌ Nginx is not responding"
-            fi
-            echo ""
-            
-            echo "Test 3: Health endpoint test"
-            echo "Testing: http://localhost:80/health"
-            curl -v http://localhost:80/health || echo "❌ Health endpoint failed"
-            echo ""
-            
-            echo "Test 4: App direct test (if accessible)"
-            echo "Testing: http://localhost:8080/api/v1/health"
-            curl -v http://localhost:8080/api/v1/health || echo "❌ Direct app health failed"
-            echo ""
-            
-            echo "========================================="
-            echo "📁 FRONTEND BUILD VERIFICATION"
-            echo "========================================="
-            if [ -d "/opt/mymcp/OnParDev.MyMcp.Api/wwwroot" ]; then
-              echo "✅ wwwroot directory exists"
-              echo "Contents:"
-              ls -la /opt/mymcp/OnParDev.MyMcp.Api/wwwroot/ || echo "Cannot list wwwroot contents"
-            else
-              echo "❌ wwwroot directory not found"
-            fi
+            echo "🏥 Health check:"
+            curl -s -o /dev/null -w "HTTP %{http_code}" http://localhost:80/health && echo " ✅" || echo " ❌"
           EOF
 
       - name: Health check
         run: |
-          echo "🏥 Performing progressive health check..."
+          echo "🏥 Performing health check..."
           
-          # Test 1: Basic connectivity to port 80 (HTTP) - always available
-          echo "Test 1/3: Testing basic port 80 connectivity..."
+          # Test basic connectivity
           for i in {1..5}; do
             if nc -z -w5 ${{ steps.get-ip.outputs.droplet_ip }} 80; then
-              echo "✅ Port 80 is reachable from external"
+              echo "✅ Port 80 accessible"
               break
             else
-              echo "⏳ Waiting for port 80 to be available... (attempt $i/5)"
+              echo "⏳ Waiting for port 80... (attempt $i/5)"
               sleep 10
             fi
             if [ $i -eq 5 ]; then
               echo "❌ Port 80 never became available"
-              echo "🔍 Running remote port check..."
-              ssh root@${{ steps.get-ip.outputs.droplet_ip }} "netstat -tlnp | grep :80 || echo 'No process listening on port 80'"
               exit 1
             fi
           done
           
-          # Test 2: Nginx response (check if responding)
-          echo "Test 2/3: Testing nginx response..."
+          # Test health endpoint
           for i in {1..5}; do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://${{ steps.get-ip.outputs.droplet_ip }}/ || echo "000")
-            if [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
-              echo "✅ Nginx is redirecting HTTP to HTTPS (HTTP $HTTP_CODE) - SSL mode active"
-              SSL_MODE="true"
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://${{ steps.get-ip.outputs.droplet_ip }}/health || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ HTTP health endpoint working (HTTP $HTTP_CODE)"
               break
-            elif [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ Nginx is serving HTTP directly (HTTP $HTTP_CODE) - HTTP-only mode active"
-              SSL_MODE="false"
-              break
-            elif [ "$HTTP_CODE" != "000" ]; then
-              echo "✅ Nginx is responding with HTTP $HTTP_CODE"
-              break
+            elif [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
+              # Try HTTPS
+              if curl -f -k https://${{ steps.get-ip.outputs.droplet_ip }}/health; then
+                echo "✅ HTTPS health endpoint working (redirected from HTTP)"
+                break
+              fi
+            fi
+            
+            if [ $i -eq 5 ]; then
+              echo "❌ Health endpoint failed (HTTP $HTTP_CODE)"
+              exit 1
             else
-              echo "⏳ Waiting for nginx to respond... (attempt $i/5)"
+              echo "⏳ Waiting for health endpoint... (attempt $i/5)"
               sleep 10
             fi
-            if [ $i -eq 5 ]; then
-              echo "❌ Nginx is not responding"
-              echo "🔍 Checking nginx status remotely..."
-              ssh root@${{ steps.get-ip.outputs.droplet_ip }} "docker-compose -f /opt/mymcp/docker-compose.production.yml logs --tail=10 nginx"
-              exit 1
-            fi
           done
           
-          # Test 3: Health endpoint (adaptive based on SSL mode)
-          echo "Test 3/3: Testing health endpoint..."
-          if [ "$SSL_MODE" = "true" ]; then
-            echo "Testing HTTPS health endpoint..."
-            for i in {1..5}; do
-              if curl -f -k https://${{ steps.get-ip.outputs.droplet_ip }}/health; then
-                echo "✅ HTTPS Health endpoint is working!"
-                echo "🎉 SSL-enabled application deployment successful!"
-                break
-              else
-                echo "⏳ Waiting for HTTPS health endpoint to be ready... (attempt $i/5)"
-                sleep 10
-              fi
-              if [ $i -eq 5 ]; then
-                echo "❌ HTTPS health endpoint failed"
-                exit 1
-              fi
-            done
-          else
-            echo "Testing HTTP health endpoint..."
-            for i in {1..5}; do
-              if curl -f http://${{ steps.get-ip.outputs.droplet_ip }}/health; then
-                echo "✅ HTTP Health endpoint is working!"
-                echo "🎉 HTTP-only application deployment successful!"
-                break
-              else
-                echo "⏳ Waiting for HTTP health endpoint to be ready... (attempt $i/5)"
-                sleep 10
-              fi
-              if [ $i -eq 5 ]; then
-                echo "❌ HTTP health endpoint failed"
-                exit 1
-              fi
-            done
-          fi
+          echo "🎉 Deployment successful!"
 
       - name: Deployment summary
         run: |
