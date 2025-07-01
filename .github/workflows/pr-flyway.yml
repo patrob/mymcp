@@ -53,6 +53,7 @@ jobs:
           -user=postgres \
           -password=postgres \
           -connectRetries=60 \
+          -locations=filesystem:/flyway/sql \
           migrate
     
     - name: Validate database schema
@@ -101,6 +102,7 @@ jobs:
           -url=jdbc:postgresql://localhost:5432/onpardev_mymcp_test \
           -user=postgres \
           -password=postgres \
+          -locations=filesystem:/flyway/sql \
           info
     
     - name: Test migration rollback capability
@@ -113,6 +115,7 @@ jobs:
           -url=jdbc:postgresql://localhost:5432/onpardev_mymcp_test \
           -user=postgres \
           -password=postgres \
+          -locations=filesystem:/flyway/sql \
           validate || echo "Note: Validation warnings are informational only"
 
   flyway-compatibility-test:
@@ -160,6 +163,7 @@ jobs:
           -user=postgres \
           -password=postgres \
           -connectRetries=60 \
+          -locations=filesystem:/flyway/sql \
           migrate
     
     - name: Verify schema on PostgreSQL ${{ matrix.postgres-version }}

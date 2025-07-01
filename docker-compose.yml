@@ -21,7 +21,7 @@ services:
   flyway:
     image: flyway/flyway:10
     container_name: onpardev-mymcp-flyway
-    command: -url=jdbc:postgresql://postgres:5432/onpardev_mymcp -user=postgres -password=postgres -connectRetries=60 migrate
+    command: -url=jdbc:postgresql://postgres:5432/onpardev_mymcp -user=postgres -password=postgres -connectRetries=60 -locations=filesystem:/flyway/sql migrate
     volumes:
       - ./db/migrations:/flyway/sql
     depends_on:

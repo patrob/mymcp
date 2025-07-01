@@ -68,6 +68,7 @@ services:
       -user=postgres
       -password=${POSTGRES_PASSWORD}
       -connectRetries=60
+      -locations=filesystem:/flyway/sql
       migrate
     volumes:
       - ./db/migrations:/flyway/sql:ro
