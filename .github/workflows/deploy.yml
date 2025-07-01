@@ -496,9 +496,9 @@ jobs:
             # Remove old images to save space on $6/month droplet
             docker image prune -f
             
-            # Check if SSL certificates exist
-            if ! docker volume ls | grep -q mymcp_certbot_certs; then
-              echo "🔒 No SSL certificates found. Setting up Let's Encrypt..."
+            # Check if valid SSL certificates exist
+            if ! docker run --rm -v mymcp_certbot_certs:/etc/letsencrypt alpine test -f /etc/letsencrypt/live/mymcp.online/fullchain.pem; then
+              echo "🔒 No valid SSL certificates found. Setting up Let's Encrypt..."
               
               # Start services except certbot first to get HTTP server running
               docker-compose -f docker-compose.production.yml up -d --build nginx app postgres flyway
