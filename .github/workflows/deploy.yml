@@ -496,8 +496,42 @@ jobs:
             # Remove old images to save space on $6/month droplet
             docker image prune -f
             
-            # Build and start the application
-            docker-compose -f docker-compose.production.yml up -d --build
+            # Check if SSL certificates exist
+            if ! docker volume ls | grep -q mymcp_certbot_certs; then
+              echo "🔒 No SSL certificates found. Setting up Let's Encrypt..."
+              
+              # Start services except certbot first to get HTTP server running
+              docker-compose -f docker-compose.production.yml up -d --build nginx app postgres flyway
+              
+              # Wait for nginx to be ready
+              echo "⏳ Waiting for nginx to be ready for certificate challenge..."
+              sleep 30
+              
+              # Run certbot to get initial certificate
+              echo "🔐 Requesting SSL certificate from Let's Encrypt..."
+              docker-compose -f docker-compose.production.yml run --rm certbot certonly \
+                --webroot \
+                --webroot-path=/var/www/certbot \
+                --email admin@mymcp.online \
+                --agree-tos \
+                --no-eff-email \
+                -d mymcp.online
+              
+              # Restart nginx to load SSL certificates
+              echo "🔄 Restarting nginx with SSL certificates..."
+              docker-compose -f docker-compose.production.yml restart nginx
+            else
+              echo "✅ SSL certificates exist. Starting all services..."
+              # Build and start all services
+              docker-compose -f docker-compose.production.yml up -d --build
+            fi
+            
+            # Set up SSL certificate auto-renewal cron job
+            echo "🔄 Setting up SSL certificate auto-renewal..."
+            chmod +x /opt/mymcp/scripts/renew-ssl.sh
+            
+            # Add cron job for SSL renewal (runs twice daily)
+            (crontab -l 2>/dev/null; echo "0 */12 * * * /opt/mymcp/scripts/renew-ssl.sh >> /var/log/ssl-renewal.log 2>&1") | crontab -
             
             # Wait for services to be healthy
             echo "Waiting for services to start..."
@@ -638,15 +672,15 @@ jobs:
             fi
           done
           
-          # Test 3: Health endpoint
-          echo "Test 3/3: Testing health endpoint..."
+          # Test 3: Health endpoint (HTTPS)
+          echo "Test 3/3: Testing HTTPS health endpoint..."
           for i in {1..10}; do
-            if curl -f http://${{ steps.get-ip.outputs.droplet_ip }}/health; then
-              echo "✅ Health endpoint is working!"
-              echo "🎉 Application deployment successful!"
+            if curl -f -k https://${{ steps.get-ip.outputs.droplet_ip }}/health; then
+              echo "✅ HTTPS Health endpoint is working!"
+              echo "🎉 SSL-enabled application deployment successful!"
               break
             else
-              echo "⏳ Waiting for health endpoint to be ready... (attempt $i/10)"
+              echo "⏳ Waiting for HTTPS health endpoint to be ready... (attempt $i/10)"
               if [ $i -eq 5 ]; then
                 echo "🔍 Checking application logs for debugging..."
                 ssh root@${{ steps.get-ip.outputs.droplet_ip }} "docker-compose -f /opt/mymcp/docker-compose.production.yml logs --tail=20 app"
