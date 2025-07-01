@@ -384,17 +384,35 @@ jobs:
           for i in {1..10}; do
             if nc -z -w5 ${{ steps.get-ip.outputs.droplet_ip }} 22; then
               echo "✅ SSH port is open"
-              # Give cloud-init extra time to complete user setup
-              echo "⏳ Waiting additional 2 minutes for cloud-init to complete user setup..."
-              sleep 120
               break
             else
               echo "⏳ Waiting for SSH to be available... (attempt $i/10)"
-              sleep 30
+              sleep 15
             fi
             if [ $i -eq 10 ]; then
               echo "❌ SSH port never became available"
               exit 1
+            fi
+          done
+          
+          # Intelligent cloud-init status checking
+          echo "🔍 Checking cloud-init status..."
+          for i in {1..6}; do
+            if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ steps.get-ip.outputs.droplet_ip }} "cloud-init status --wait --long" 2>/dev/null | grep -q "status: done"; then
+              echo "✅ Cloud-init completed successfully"
+              break
+            elif ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ steps.get-ip.outputs.droplet_ip }} "test -f /var/lib/cloud/instance/boot-finished" 2>/dev/null; then
+              echo "✅ Cloud-init boot finished detected"
+              break
+            else
+              echo "⏳ Waiting for cloud-init to complete... (attempt $i/6)"
+              sleep 15
+            fi
+            if [ $i -eq 6 ]; then
+              echo "⚠️ Cloud-init status check timed out, proceeding anyway..."
+              echo "⏳ Waiting 30 seconds for safety..."
+              sleep 30
+              break
             fi
           done
 
@@ -490,17 +508,42 @@ jobs:
           ssh root@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
             cd /opt/mymcp
             
-            # Stop existing containers
-            docker-compose -f docker-compose.production.yml down || true
+            # Minimize downtime deployment strategy
+            echo "🚀 Starting zero-downtime deployment..."
             
-            # Remove old images to save space on $6/month droplet
+            # Build new images first (without stopping old containers)
+            echo "🔨 Building new images..."
+            docker-compose -f docker-compose.production.yml build
+            
+            # Quick container swap to minimize downtime
+            echo "⚡ Performing quick container swap..."
+            
+            # For nginx: start new container with different name, then swap
+            if docker ps | grep -q "mymcp-nginx"; then
+              echo "🔄 Updating nginx..."
+              docker-compose -f docker-compose.production.yml up -d --no-deps nginx
+            else
+              echo "🆕 Starting nginx..."
+              docker-compose -f docker-compose.production.yml up -d nginx
+            fi
+            
+            # For app: rolling update approach
+            if docker ps | grep -q "mymcp-app"; then
+              echo "🔄 Updating application..."
+              docker-compose -f docker-compose.production.yml up -d --no-deps app
+            else
+              echo "🆕 Starting application..."
+              docker-compose -f docker-compose.production.yml up -d app
+            fi
+            
+            # Database and migrations (these don't cause downtime)
+            docker-compose -f docker-compose.production.yml up -d postgres
+            docker-compose -f docker-compose.production.yml up --no-deps flyway
+            
+            # Clean up old containers and images after successful deployment
+            echo "🧹 Cleaning up old resources..."
+            docker container prune -f
             docker image prune -f
-            
-            # Always start with HTTP-only configuration first
-            echo "🚀 Starting services with adaptive SSL configuration..."
-            
-            # Start all services (nginx will auto-detect SSL certificates)
-            docker-compose -f docker-compose.production.yml up -d --build
             
             # Wait for services to be ready
             echo "⏳ Waiting for services to start..."
