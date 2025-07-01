@@ -507,19 +507,164 @@ jobs:
             docker-compose -f docker-compose.production.yml ps
           EOF
 
+      - name: Deployment diagnostics
+        run: |
+          echo "🔍 Running comprehensive deployment diagnostics..."
+          ssh root@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
+            cd /opt/mymcp
+            
+            echo "========================================="
+            echo "📊 CONTAINER STATUS"
+            echo "========================================="
+            docker-compose -f docker-compose.production.yml ps -a
+            echo ""
+            
+            echo "========================================="
+            echo "🏥 CONTAINER HEALTH STATUS"
+            echo "========================================="
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            echo ""
+            
+            echo "========================================="
+            echo "📋 CONTAINER LOGS (Last 20 lines each)"
+            echo "========================================="
+            echo "--- NGINX LOGS ---"
+            docker-compose -f docker-compose.production.yml logs --tail=20 nginx || echo "Nginx container not running"
+            echo ""
+            echo "--- APP LOGS ---"
+            docker-compose -f docker-compose.production.yml logs --tail=20 app || echo "App container not running"
+            echo ""
+            echo "--- POSTGRES LOGS ---"
+            docker-compose -f docker-compose.production.yml logs --tail=20 postgres || echo "Postgres container not running"
+            echo ""
+            
+            echo "========================================="
+            echo "🌐 NETWORK CONNECTIVITY"
+            echo "========================================="
+            echo "Port 80 binding:"
+            netstat -tlnp | grep :80 || echo "Port 80 not bound"
+            echo ""
+            echo "Port 443 binding:"
+            netstat -tlnp | grep :443 || echo "Port 443 not bound"
+            echo ""
+            
+            echo "========================================="
+            echo "🔧 ENVIRONMENT VARIABLES"
+            echo "========================================="
+            echo "Environment file exists:" 
+            ls -la .env || echo ".env file not found"
+            echo ""
+            
+            echo "========================================="
+            echo "🧪 PROGRESSIVE CONNECTIVITY TESTS"
+            echo "========================================="
+            echo "Test 1: Basic port 80 connectivity"
+            if nc -z localhost 80; then
+              echo "✅ Port 80 is reachable"
+            else
+              echo "❌ Port 80 is not reachable"
+            fi
+            echo ""
+            
+            echo "Test 2: Nginx response"
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:80 | grep -q "200\|404\|301\|302"; then
+              echo "✅ Nginx is responding"
+              echo "Nginx response: $(curl -s -I http://localhost:80 | head -1)"
+            else
+              echo "❌ Nginx is not responding"
+            fi
+            echo ""
+            
+            echo "Test 3: Health endpoint test"
+            echo "Testing: http://localhost:80/health"
+            curl -v http://localhost:80/health || echo "❌ Health endpoint failed"
+            echo ""
+            
+            echo "Test 4: App direct test (if accessible)"
+            echo "Testing: http://localhost:8080/api/v1/health"
+            curl -v http://localhost:8080/api/v1/health || echo "❌ Direct app health failed"
+            echo ""
+            
+            echo "========================================="
+            echo "📁 FRONTEND BUILD VERIFICATION"
+            echo "========================================="
+            if [ -d "/opt/mymcp/OnParDev.MyMcp.Api/wwwroot" ]; then
+              echo "✅ wwwroot directory exists"
+              echo "Contents:"
+              ls -la /opt/mymcp/OnParDev.MyMcp.Api/wwwroot/ || echo "Cannot list wwwroot contents"
+            else
+              echo "❌ wwwroot directory not found"
+            fi
+          EOF
+
       - name: Health check
         run: |
-          echo "Performing health check..."
-          for i in {1..10}; do
-            if curl -f http://${{ steps.get-ip.outputs.droplet_ip }}/health; then
-              echo "✅ Application is healthy!"
+          echo "🏥 Performing progressive health check..."
+          
+          # Test 1: Basic connectivity to port 80
+          echo "Test 1/3: Testing basic port 80 connectivity..."
+          for i in {1..5}; do
+            if nc -z -w5 ${{ steps.get-ip.outputs.droplet_ip }} 80; then
+              echo "✅ Port 80 is reachable from external"
               break
             else
-              echo "⏳ Waiting for application to be ready... (attempt $i/10)"
+              echo "⏳ Waiting for port 80 to be available... (attempt $i/5)"
+              sleep 10
+            fi
+            if [ $i -eq 5 ]; then
+              echo "❌ Port 80 never became available"
+              echo "🔍 Running remote port check..."
+              ssh root@${{ steps.get-ip.outputs.droplet_ip }} "netstat -tlnp | grep :80 || echo 'No process listening on port 80'"
+              exit 1
+            fi
+          done
+          
+          # Test 2: Nginx response (any response)
+          echo "Test 2/3: Testing nginx response..."
+          for i in {1..5}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://${{ steps.get-ip.outputs.droplet_ip }}/ || echo "000")
+            if [ "$HTTP_CODE" != "000" ]; then
+              echo "✅ Nginx is responding with HTTP $HTTP_CODE"
+              break
+            else
+              echo "⏳ Waiting for nginx to respond... (attempt $i/5)"
+              sleep 10
+            fi
+            if [ $i -eq 5 ]; then
+              echo "❌ Nginx is not responding"
+              echo "🔍 Checking nginx status remotely..."
+              ssh root@${{ steps.get-ip.outputs.droplet_ip }} "docker-compose -f /opt/mymcp/docker-compose.production.yml logs --tail=10 nginx"
+              exit 1
+            fi
+          done
+          
+          # Test 3: Health endpoint
+          echo "Test 3/3: Testing health endpoint..."
+          for i in {1..10}; do
+            if curl -f http://${{ steps.get-ip.outputs.droplet_ip }}/health; then
+              echo "✅ Health endpoint is working!"
+              echo "🎉 Application deployment successful!"
+              break
+            else
+              echo "⏳ Waiting for health endpoint to be ready... (attempt $i/10)"
+              if [ $i -eq 5 ]; then
+                echo "🔍 Checking application logs for debugging..."
+                ssh root@${{ steps.get-ip.outputs.droplet_ip }} "docker-compose -f /opt/mymcp/docker-compose.production.yml logs --tail=20 app"
+              fi
               sleep 30
             fi
             if [ $i -eq 10 ]; then
-              echo "❌ Health check failed after 10 attempts"
+              echo "❌ Health endpoint failed after 10 attempts"
+              echo "🔍 Final diagnostic check..."
+              ssh root@${{ steps.get-ip.outputs.droplet_ip }} << 'EOF'
+                cd /opt/mymcp
+                echo "Container status:"
+                docker-compose -f docker-compose.production.yml ps
+                echo "Recent application logs:"
+                docker-compose -f docker-compose.production.yml logs --tail=30 app
+                echo "Testing direct health endpoint:"
+                curl -v http://localhost:8080/api/v1/health || echo "Direct health check failed"
+              EOF
               exit 1
             fi
           done
