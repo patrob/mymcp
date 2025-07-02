@@ -28,7 +28,7 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
     public async Task CreateGitHubServer_WithValidRequest_ShouldReturnCreatedServer()
     {
         // Arrange
-        var user = await CreateTestUserWithSubscriptionAsync();
+        await CreateTestUserWithSubscriptionAsync();
         var request = new CreateGitHubServerRequest
         {
             Name = "Test GitHub Server",
