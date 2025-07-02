@@ -249,7 +249,7 @@ describe('PublicLayout', () => {
       render(<PublicLayout><div>Content</div></PublicLayout>)
 
       // Assert
-      expect(screen.getByText('© 2024 MyMcp. All rights reserved.')).toBeInTheDocument()
+      expect(screen.getByText(`© ${new Date().getFullYear()} On PAR Dev, LLC. All rights reserved.`)).toBeInTheDocument()
     })
   })
 
