@@ -32,7 +32,7 @@ public class AdminServiceTests : IDisposable
             .With(u => u.Role, UserRole.Admin)
             .Without(u => u.ServerInstances)
             .Create();
-        
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -51,7 +51,7 @@ public class AdminServiceTests : IDisposable
             .With(u => u.Role, UserRole.User)
             .Without(u => u.ServerInstances)
             .Create();
-        
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -87,7 +87,7 @@ public class AdminServiceTests : IDisposable
             .With(u => u.CreatedAt, DateTime.UtcNow.AddDays(-1))
             .Without(u => u.ServerInstances)
             .Create();
-        
+
         _context.Users.AddRange(user2, user1); // Add in reverse order
         await _context.SaveChangesAsync();
 
@@ -139,7 +139,7 @@ public class AdminServiceTests : IDisposable
             .With(u => u.Role, UserRole.User)
             .Without(u => u.ServerInstances)
             .Create();
-        
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -161,7 +161,7 @@ public class AdminServiceTests : IDisposable
             .With(u => u.UpdatedAt, initialUpdateTime)
             .Without(u => u.ServerInstances)
             .Create();
-        
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -180,7 +180,7 @@ public class AdminServiceTests : IDisposable
         var nonExistentUserId = _fixture.Create<Guid>();
 
         // Act & Assert
-        await Should.ThrowAsync<InvalidOperationException>(async () => 
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
             await _sut.PromoteUserToAdminAsync(nonExistentUserId));
     }
 
@@ -192,7 +192,7 @@ public class AdminServiceTests : IDisposable
             .With(u => u.Role, UserRole.Admin)
             .Without(u => u.ServerInstances)
             .Create();
-        
+
         _context.Users.Add(admin);
         await _context.SaveChangesAsync();
 
@@ -211,7 +211,7 @@ public class AdminServiceTests : IDisposable
         var nonExistentUserId = _fixture.Create<Guid>();
 
         // Act & Assert
-        await Should.ThrowAsync<InvalidOperationException>(async () => 
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
             await _sut.DemoteUserToRegularAsync(nonExistentUserId));
     }
 

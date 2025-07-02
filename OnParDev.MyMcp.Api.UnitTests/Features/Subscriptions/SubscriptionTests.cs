@@ -42,9 +42,9 @@ public class SubscriptionTests
         // Arrange
         var plan = CreateTestPlan(PlanTypeName.Free);
         var subscription = CreateTestSubscription(
-            SubscriptionStatus.Active, 
-            DateTime.UtcNow.AddDays(-1), 
-            DateTime.UtcNow.AddDays(30), 
+            SubscriptionStatus.Active,
+            DateTime.UtcNow.AddDays(-1),
+            DateTime.UtcNow.AddDays(30),
             plan);
 
         // Act
