@@ -1,5 +1,5 @@
 using AutoFixture;
-using FluentAssertions;
+using Shouldly;
 using OnParDev.MyMcp.Api.Features.Subscriptions.Entities;
 using Xunit;
 
@@ -16,7 +16,7 @@ public class FreePlanTypeTests
         var result = _sut.Name;
 
         // Assert
-        result.Should().Be("Free");
+        result.ShouldBe("Free");
     }
 
     [Fact]
@@ -26,7 +26,7 @@ public class FreePlanTypeTests
         var result = _sut.Description;
 
         // Assert
-        result.Should().Be("Perfect for testing and small projects");
+        result.ShouldBe("Perfect for testing and small projects");
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class FreePlanTypeTests
         var result = _sut.MonthlyRequestLimit;
 
         // Assert
-        result.Should().Be(100);
+        result.ShouldBe(100);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class FreePlanTypeTests
         var result = _sut.AllowsCustomServers;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class FreePlanTypeTests
         var result = _sut.AllowsTeamManagement;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class FreePlanTypeTests
         var result = _sut.CanCreateServer(currentServerCount);
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class FreePlanTypeTests
         var result = _sut.CanCreateServer(currentServerCount);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class FreePlanTypeTests
         var result = _sut.CanMakeRequest(currentMonthlyRequests);
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class FreePlanTypeTests
         var result = _sut.CanMakeRequest(currentMonthlyRequests);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -118,16 +118,15 @@ public class FreePlanTypeTests
         var result = _sut.GetPricing(BillingCycle.Monthly);
 
         // Assert
-        result.Amount.Should().Be(0m);
+        result.Amount.ShouldBe(0m);
     }
 
     [Fact]
     public void GetPricing_WithYearlyBilling_ShouldThrowException()
     {
         // Arrange & Act & Assert
-        _sut.Invoking(x => x.GetPricing(BillingCycle.Yearly))
-            .Should().Throw<InvalidOperationException>()
-            .WithMessage("Pricing for Yearly cycle not available for Free plan");
+        Should.Throw<InvalidOperationException>(() => _sut.GetPricing(BillingCycle.Yearly))
+            .Message.ShouldBe("Pricing for Yearly cycle not available for Free plan");
     }
 }
 
@@ -142,7 +141,7 @@ public class IndividualPlanTypeTests
         var result = _sut.Name;
 
         // Assert
-        result.Should().Be("Individual");
+        result.ShouldBe("Individual");
     }
 
     [Fact]
@@ -152,7 +151,7 @@ public class IndividualPlanTypeTests
         var result = _sut.MonthlyRequestLimit;
 
         // Assert
-        result.Should().Be(10000);
+        result.ShouldBe(10000);
     }
 
     [Fact]
@@ -162,7 +161,7 @@ public class IndividualPlanTypeTests
         var result = _sut.AllowsCustomServers;
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -172,7 +171,7 @@ public class IndividualPlanTypeTests
         var result = _sut.AllowsTeamManagement;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -185,7 +184,7 @@ public class IndividualPlanTypeTests
         var result = _sut.CanCreateServer(currentServerCount);
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -198,7 +197,7 @@ public class IndividualPlanTypeTests
         var result = _sut.CanCreateServer(currentServerCount);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -208,7 +207,7 @@ public class IndividualPlanTypeTests
         var result = _sut.GetPricing(BillingCycle.Monthly);
 
         // Assert
-        result.Amount.Should().Be(10m);
+        result.Amount.ShouldBe(10m);
     }
 
     [Fact]
@@ -218,7 +217,7 @@ public class IndividualPlanTypeTests
         var result = _sut.GetPricing(BillingCycle.Yearly);
 
         // Assert
-        result.Amount.Should().Be(100m);
+        result.Amount.ShouldBe(100m);
     }
 }
 
@@ -233,7 +232,7 @@ public class TeamPlanTypeTests
         var result = _sut.Name;
 
         // Assert
-        result.Should().Be("Team");
+        result.ShouldBe("Team");
     }
 
     [Fact]
@@ -243,7 +242,7 @@ public class TeamPlanTypeTests
         var result = _sut.MonthlyRequestLimit;
 
         // Assert
-        result.Should().Be(100000);
+        result.ShouldBe(100000);
     }
 
     [Fact]
@@ -253,7 +252,7 @@ public class TeamPlanTypeTests
         var result = _sut.AllowsCustomServers;
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -263,7 +262,7 @@ public class TeamPlanTypeTests
         var result = _sut.AllowsTeamManagement;
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -276,7 +275,7 @@ public class TeamPlanTypeTests
         var result = _sut.CanCreateServer(currentServerCount);
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -289,7 +288,7 @@ public class TeamPlanTypeTests
         var result = _sut.CanCreateServer(currentServerCount);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 }
 
@@ -308,7 +307,7 @@ public class PlanPricingTests
         var result = pricing.MonthlyEquivalent;
 
         // Assert
-        result.Should().Be(amount);
+        result.ShouldBe(amount);
     }
 
     [Fact]
@@ -322,7 +321,7 @@ public class PlanPricingTests
         var result = pricing.MonthlyEquivalent;
 
         // Assert
-        result.Should().Be(10m);
+        result.ShouldBe(10m);
     }
 
     [Fact]
@@ -336,7 +335,7 @@ public class PlanPricingTests
         var result = pricing.YearlyEquivalent;
 
         // Assert
-        result.Should().Be(amount);
+        result.ShouldBe(amount);
     }
 
     [Fact]
@@ -350,6 +349,6 @@ public class PlanPricingTests
         var result = pricing.YearlyEquivalent;
 
         // Assert
-        result.Should().Be(120m);
+        result.ShouldBe(120m);
     }
 }

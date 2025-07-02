@@ -1,6 +1,6 @@
 ﻿using AutoFixture;
 using AutoFixture.Xunit2;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using OnParDev.MyMcp.Api.Domain.Entities;
@@ -43,9 +43,9 @@ public class AuthServiceTests
         var result = await authService.GetUserByIdAsync(userId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(userId);
-        result.Email.Should().Be(user.Email);
+        result.ShouldNotBeNull();
+        result!.Id.ShouldBe(userId);
+        result.Email.ShouldBe(user.Email);
     }
 
     [Theory, AutoData]
@@ -63,6 +63,6 @@ public class AuthServiceTests
         var result = await authService.GetUserByIdAsync(userId);
 
         // Assert
-        result.Should().BeNull();
+        result.ShouldBeNull();
     }
 }

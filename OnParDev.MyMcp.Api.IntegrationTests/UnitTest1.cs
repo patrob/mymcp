@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using FluentAssertions;
+using Shouldly;
 
 namespace OnParDev.MyMcp.Api.IntegrationTests;
 
@@ -21,9 +21,9 @@ public class HealthCheckTests : IClassFixture<IntegrationTestWebAppFactory>
         var response = await _client.GetAsync("/api/v1/health");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
         
         var content = await response.Content.ReadAsStringAsync();
-        content.Should().Contain("Healthy");
+        content.ShouldContain("Healthy");
     }
 }

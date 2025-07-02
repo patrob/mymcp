@@ -10,6 +10,7 @@ public interface IAuthService
     Task<User> GetOrCreateUserAsync(ClaimsPrincipal claimsPrincipal);
     Task<User?> GetUserByIdAsync(Guid userId);
     Task<User?> GetUserByClerkIdAsync(string clerkUserId);
+    Task<User?> GetCurrentUserAsync(HttpContext context);
 }
 
 public class AuthService : IAuthService
@@ -70,5 +71,17 @@ public class AuthService : IAuthService
     public async Task<User?> GetUserByClerkIdAsync(string clerkUserId)
     {
         return await _context.Users.FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId);
+    }
+
+    public async Task<User?> GetCurrentUserAsync(HttpContext context)
+    {
+        if (context.User?.Identity?.IsAuthenticated != true)
+            return null;
+
+        var clerkUserId = context.User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(clerkUserId))
+            return null;
+
+        return await GetUserByClerkIdAsync(clerkUserId);
     }
 }

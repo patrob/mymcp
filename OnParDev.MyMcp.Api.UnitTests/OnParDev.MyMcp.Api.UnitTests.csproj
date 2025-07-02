@@ -15,7 +15,7 @@
     <PackageReference Include="AutoFixture" />
     <PackageReference Include="AutoFixture.Xunit2" />
     <PackageReference Include="NSubstitute" />
-    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Shouldly" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
   </ItemGroup>
 

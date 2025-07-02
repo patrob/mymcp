@@ -7,6 +7,7 @@ using System.Text;
 using OnParDev.MyMcp.Api.Infrastructure.Data;
 using OnParDev.MyMcp.Api.Features.Auth;
 using OnParDev.MyMcp.Api.Features.Servers;
+using OnParDev.MyMcp.Api.Features.McpServers;
 using OnParDev.MyMcp.Api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -61,6 +62,7 @@ builder.Services.AddCors(options =>
 // Add feature services
 builder.Services.AddAuthFeature();
 builder.Services.AddServersFeature();
+builder.Services.AddMcpServersFeature();
 
 
 var app = builder.Build();
@@ -108,6 +110,7 @@ app.UseAuthorization();
 
 // Map feature endpoints
 app.MapServersEndpoints();
+app.MapMcpServersEndpoints();
 
 // Health check endpoint
 app.MapGet("/api/v1/health", () => new { Status = "Healthy", Timestamp = DateTime.UtcNow })

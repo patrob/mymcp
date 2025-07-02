@@ -1,5 +1,5 @@
 using AutoFixture;
-using FluentAssertions;
+using Shouldly;
 using OnParDev.MyMcp.Api.Features.Subscriptions.Entities;
 using Xunit;
 
@@ -9,155 +9,149 @@ public class PlanTests
 {
     private readonly Fixture _fixture = new();
 
+    public PlanTests()
+    {
+        _fixture.Behaviors.OfType<ThrowingRecursionBehavior>().ToList()
+            .ForEach(b => _fixture.Behaviors.Remove(b));
+        _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
+    }
+
+    private Plan CreateTestPlan(PlanTypeName planTypeName, BillingCycle billingCycle = BillingCycle.Monthly)
+    {
+        return _fixture.Build<Plan>()
+            .With(p => p.PlanTypeName, planTypeName)
+            .With(p => p.BillingCycle, billingCycle)
+            .Without(p => p.Subscriptions)
+            .Create();
+    }
+
     [Fact]
     public void GetPlanType_WithFreePlanType_ShouldReturnFreePlanTypeInstance()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Free)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Free);
 
         // Act
         var result = plan.GetPlanType();
 
         // Assert
-        result.Should().BeOfType<FreePlanType>();
+        result.ShouldBeOfType<FreePlanType>();
     }
 
     [Fact]
     public void GetPlanType_WithIndividualPlanType_ShouldReturnIndividualPlanTypeInstance()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Individual)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Individual);
 
         // Act
         var result = plan.GetPlanType();
 
         // Assert
-        result.Should().BeOfType<IndividualPlanType>();
+        result.ShouldBeOfType<IndividualPlanType>();
     }
 
     [Fact]
     public void GetPlanType_WithTeamPlanType_ShouldReturnTeamPlanTypeInstance()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Team)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Team);
 
         // Act
         var result = plan.GetPlanType();
 
         // Assert
-        result.Should().BeOfType<TeamPlanType>();
+        result.ShouldBeOfType<TeamPlanType>();
     }
 
     [Fact]
     public void Name_WithFreePlan_ShouldReturnFree()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Free)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Free);
 
         // Act
         var result = plan.Name;
 
         // Assert
-        result.Should().Be("Free");
+        result.ShouldBe("Free");
     }
 
     [Fact]
     public void Description_WithIndividualPlan_ShouldReturnExpectedDescription()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Individual)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Individual);
 
         // Act
         var result = plan.Description;
 
         // Assert
-        result.Should().Be("For individual developers building production applications");
+        result.ShouldBe("For individual developers building production applications");
     }
 
     [Fact]
     public void Price_WithFreePlanAndMonthlyBilling_ShouldReturnZero()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Free)
-            .With(p => p.BillingCycle, BillingCycle.Monthly)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Free, BillingCycle.Monthly);
 
         // Act
         var result = plan.Price;
 
         // Assert
-        result.Should().Be(0m);
+        result.ShouldBe(0m);
     }
 
     [Fact]
     public void Price_WithIndividualPlanAndYearlyBilling_ShouldReturn100()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Individual)
-            .With(p => p.BillingCycle, BillingCycle.Yearly)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Individual, BillingCycle.Yearly);
 
         // Act
         var result = plan.Price;
 
         // Assert
-        result.Should().Be(100m);
+        result.ShouldBe(100m);
     }
 
     [Fact]
     public void MonthlyRequestLimit_WithTeamPlan_ShouldReturn100000()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Team)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Team);
 
         // Act
         var result = plan.MonthlyRequestLimit;
 
         // Assert
-        result.Should().Be(100000);
+        result.ShouldBe(100000);
     }
 
     [Fact]
     public void AllowsCustomServers_WithFreePlan_ShouldReturnFalse()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Free)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Free);
 
         // Act
         var result = plan.AllowsCustomServers;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
     public void AllowsTeamManagement_WithTeamPlan_ShouldReturnTrue()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Team)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Team);
 
         // Act
         var result = plan.AllowsTeamManagement;
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 }
