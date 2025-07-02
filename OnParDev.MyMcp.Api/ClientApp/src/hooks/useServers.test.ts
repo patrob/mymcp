@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import React from 'react'
 import { useServers, useCreateGitHubServer, useStartServer } from './useServers'
-import { McpServersEndpointsService } from '@/api'
-import type { ServerInstanceDto, CreateGitHubServerRequest } from '@/api'
+import { McpServersEndpointsService, type ServerInstanceDto, type CreateGitHubServerRequest } from '@/api'
 
 vi.mock('@/api', () => ({
   McpServersEndpointsService: {
@@ -17,9 +17,8 @@ const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
   })
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  )
+  return ({ children }: { children: React.ReactNode }) => 
+    React.createElement(QueryClientProvider, { client: queryClient }, children)
 }
 
 const mockServer: ServerInstanceDto = {

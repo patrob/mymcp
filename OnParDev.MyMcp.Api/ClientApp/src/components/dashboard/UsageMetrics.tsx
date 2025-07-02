@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Activity, Users, Server, TrendingUp } from 'lucide-react'
 
 interface UsageMetricsProps {

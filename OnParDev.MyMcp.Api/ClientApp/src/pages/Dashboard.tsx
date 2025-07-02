@@ -4,13 +4,17 @@ import { useServers } from '@/hooks/useServers'
 import { ServerCard } from '@/components/dashboard/ServerCard'
 import { ServerConnectionWizard } from '@/components/dashboard/ServerConnectionWizard'
 import { UsageMetrics } from '@/components/dashboard/UsageMetrics'
-import { Plus, AlertCircle, Loader2 } from 'lucide-react'
+import { AlertCircle, Loader2 } from 'lucide-react'
 
 export default function Dashboard() {
   const { data: servers, isLoading, error, refetch } = useServers()
 
   const handleServerAction = (action: string, serverId: string) => {
-    console.log(`Action ${action} performed on server ${serverId}`)
+    // Handle server actions - could be extended with toast notifications, etc.
+    if (action === 'configure') {
+      // Log configuration action for future implementation
+    }
+    console.debug(`Action ${action} performed on server ${serverId}`)
   }
 
   const handleServerCreated = () => {

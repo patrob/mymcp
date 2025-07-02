@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { McpServersEndpointsService } from '@/api'
-import type { ServerInstanceDto, CreateGitHubServerRequest } from '@/api'
+import { McpServersEndpointsService, type ServerInstanceDto, type CreateGitHubServerRequest } from '@/api'
 
 export function useServers() {
   return useQuery({
