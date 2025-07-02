@@ -185,25 +185,42 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        var user = _fixture.Build<User>()
-            .With(u => u.Role, UserRole.User)
-            .Without(u => u.ServerInstances)
-            .Create();
+        // Use specific timestamps to avoid PostgreSQL conversion issues
+        var baseTime = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        // Use unique identifiers for each test to avoid constraint violations
+        var uniqueId = Guid.NewGuid().ToString("N")[..8];
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            ClerkUserId = $"test-user-{uniqueId}",
+            Email = $"test-{uniqueId}@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            Role = UserRole.User,
+            CreatedAt = baseTime,
+            UpdatedAt = baseTime
+        };
 
         context.Users.Add(user);
 
-        // Create a free plan
-        var plan = new Plan
-        {
-            Id = Guid.NewGuid(),
-            PlanTypeName = PlanTypeName.Free,
-            BillingCycle = BillingCycle.Monthly,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        // Try to find existing plan first to avoid constraint violation
+        var plan = await context.Plans
+            .FirstOrDefaultAsync(p => p.PlanTypeName == PlanTypeName.Free && p.BillingCycle == BillingCycle.Monthly);
 
-        context.Plans.Add(plan);
+        if (plan == null)
+        {
+            plan = new Plan
+            {
+                Id = Guid.NewGuid(),
+                PlanTypeName = PlanTypeName.Free,
+                BillingCycle = BillingCycle.Monthly,
+                IsActive = true,
+                CreatedAt = baseTime,
+                UpdatedAt = baseTime
+            };
+            context.Plans.Add(plan);
+        }
 
         // Create an active subscription
         var subscription = new Subscription
@@ -212,10 +229,10 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
             UserId = user.Id,
             PlanId = plan.Id,
             Status = SubscriptionStatus.Active,
-            StartDate = DateTime.UtcNow.AddDays(-1),
-            NextBillingDate = DateTime.UtcNow.AddMonths(1),
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            StartDate = baseTime.AddDays(-1),
+            NextBillingDate = baseTime.AddMonths(1),
+            CreatedAt = baseTime,
+            UpdatedAt = baseTime
         };
 
         context.Subscriptions.Add(subscription);
@@ -229,6 +246,9 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+        // Use specific timestamps to avoid PostgreSQL conversion issues
+        var baseTime = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
         // Create a test MCP server template
         var template = new McpServerTemplate
         {
@@ -238,8 +258,8 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
             Version = "1.0.0",
             Category = "Version Control",
             IsOfficial = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = baseTime,
+            UpdatedAt = baseTime
         };
 
         context.McpServerTemplates.Add(template);
@@ -254,8 +274,8 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
             ImageTag = "latest",
             CpuLimit = 1000,
             MemoryLimit = 512,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = baseTime,
+            UpdatedAt = baseTime
         };
 
         context.ContainerSpecs.Add(containerSpec);
@@ -270,8 +290,8 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
             ContainerSpecId = containerSpec.Id,
             Status = ServerStatus.Running,
             ContainerInstanceId = "test-container-123",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = baseTime,
+            UpdatedAt = baseTime
         };
 
         context.ServerInstances.Add(server);

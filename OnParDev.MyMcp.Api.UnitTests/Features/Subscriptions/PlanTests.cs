@@ -9,13 +9,27 @@ public class PlanTests
 {
     private readonly Fixture _fixture = new();
 
+    public PlanTests()
+    {
+        _fixture.Behaviors.OfType<ThrowingRecursionBehavior>().ToList()
+            .ForEach(b => _fixture.Behaviors.Remove(b));
+        _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
+    }
+
+    private Plan CreateTestPlan(PlanTypeName planTypeName, BillingCycle billingCycle = BillingCycle.Monthly)
+    {
+        return _fixture.Build<Plan>()
+            .With(p => p.PlanTypeName, planTypeName)
+            .With(p => p.BillingCycle, billingCycle)
+            .Without(p => p.Subscriptions)
+            .Create();
+    }
+
     [Fact]
     public void GetPlanType_WithFreePlanType_ShouldReturnFreePlanTypeInstance()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Free)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Free);
 
         // Act
         var result = plan.GetPlanType();
@@ -28,9 +42,7 @@ public class PlanTests
     public void GetPlanType_WithIndividualPlanType_ShouldReturnIndividualPlanTypeInstance()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Individual)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Individual);
 
         // Act
         var result = plan.GetPlanType();
@@ -43,9 +55,7 @@ public class PlanTests
     public void GetPlanType_WithTeamPlanType_ShouldReturnTeamPlanTypeInstance()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Team)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Team);
 
         // Act
         var result = plan.GetPlanType();
@@ -58,9 +68,7 @@ public class PlanTests
     public void Name_WithFreePlan_ShouldReturnFree()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Free)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Free);
 
         // Act
         var result = plan.Name;
@@ -73,9 +81,7 @@ public class PlanTests
     public void Description_WithIndividualPlan_ShouldReturnExpectedDescription()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Individual)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Individual);
 
         // Act
         var result = plan.Description;
@@ -88,10 +94,7 @@ public class PlanTests
     public void Price_WithFreePlanAndMonthlyBilling_ShouldReturnZero()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Free)
-            .With(p => p.BillingCycle, BillingCycle.Monthly)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Free, BillingCycle.Monthly);
 
         // Act
         var result = plan.Price;
@@ -104,10 +107,7 @@ public class PlanTests
     public void Price_WithIndividualPlanAndYearlyBilling_ShouldReturn100()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Individual)
-            .With(p => p.BillingCycle, BillingCycle.Yearly)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Individual, BillingCycle.Yearly);
 
         // Act
         var result = plan.Price;
@@ -120,9 +120,7 @@ public class PlanTests
     public void MonthlyRequestLimit_WithTeamPlan_ShouldReturn100000()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Team)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Team);
 
         // Act
         var result = plan.MonthlyRequestLimit;
@@ -135,9 +133,7 @@ public class PlanTests
     public void AllowsCustomServers_WithFreePlan_ShouldReturnFalse()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Free)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Free);
 
         // Act
         var result = plan.AllowsCustomServers;
@@ -150,9 +146,7 @@ public class PlanTests
     public void AllowsTeamManagement_WithTeamPlan_ShouldReturnTrue()
     {
         // Arrange
-        var plan = _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, PlanTypeName.Team)
-            .Create();
+        var plan = CreateTestPlan(PlanTypeName.Team);
 
         // Act
         var result = plan.AllowsTeamManagement;
