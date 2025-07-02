@@ -7,151 +7,151 @@ namespace OnParDev.MyMcp.Api.UnitTests.Features.Subscriptions;
 
 public class PlanTests
 {
-    private readonly Fixture _fixture = new();
+        private readonly Fixture _fixture = new();
 
-    public PlanTests()
-    {
-        _fixture.Behaviors.OfType<ThrowingRecursionBehavior>().ToList()
-            .ForEach(b => _fixture.Behaviors.Remove(b));
-        _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
-    }
+        public PlanTests()
+        {
+                _fixture.Behaviors.OfType<ThrowingRecursionBehavior>().ToList()
+                    .ForEach(b => _fixture.Behaviors.Remove(b));
+                _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
+        }
 
-    private Plan CreateTestPlan(PlanTypeName planTypeName, BillingCycle billingCycle = BillingCycle.Monthly)
-    {
-        return _fixture.Build<Plan>()
-            .With(p => p.PlanTypeName, planTypeName)
-            .With(p => p.BillingCycle, billingCycle)
-            .Without(p => p.Subscriptions)
-            .Create();
-    }
+        private Plan CreateTestPlan(PlanTypeName planTypeName, BillingCycle billingCycle = BillingCycle.Monthly)
+        {
+                return _fixture.Build<Plan>()
+                    .With(p => p.PlanTypeName, planTypeName)
+                    .With(p => p.BillingCycle, billingCycle)
+                    .Without(p => p.Subscriptions)
+                    .Create();
+        }
 
-    [Fact]
-    public void GetPlanType_WithFreePlanType_ShouldReturnFreePlanTypeInstance()
-    {
-        // Arrange
-        var plan = CreateTestPlan(PlanTypeName.Free);
+        [Fact]
+        public void GetPlanType_WithFreePlanType_ShouldReturnFreePlanTypeInstance()
+        {
+                // Arrange
+                var plan = CreateTestPlan(PlanTypeName.Free);
 
-        // Act
-        var result = plan.GetPlanType();
+                // Act
+                var result = plan.GetPlanType();
 
-        // Assert
-        result.ShouldBeOfType<FreePlanType>();
-    }
+                // Assert
+                result.ShouldBeOfType<FreePlanType>();
+        }
 
-    [Fact]
-    public void GetPlanType_WithIndividualPlanType_ShouldReturnIndividualPlanTypeInstance()
-    {
-        // Arrange
-        var plan = CreateTestPlan(PlanTypeName.Individual);
+        [Fact]
+        public void GetPlanType_WithIndividualPlanType_ShouldReturnIndividualPlanTypeInstance()
+        {
+                // Arrange
+                var plan = CreateTestPlan(PlanTypeName.Individual);
 
-        // Act
-        var result = plan.GetPlanType();
+                // Act
+                var result = plan.GetPlanType();
 
-        // Assert
-        result.ShouldBeOfType<IndividualPlanType>();
-    }
+                // Assert
+                result.ShouldBeOfType<IndividualPlanType>();
+        }
 
-    [Fact]
-    public void GetPlanType_WithTeamPlanType_ShouldReturnTeamPlanTypeInstance()
-    {
-        // Arrange
-        var plan = CreateTestPlan(PlanTypeName.Team);
+        [Fact]
+        public void GetPlanType_WithTeamPlanType_ShouldReturnTeamPlanTypeInstance()
+        {
+                // Arrange
+                var plan = CreateTestPlan(PlanTypeName.Team);
 
-        // Act
-        var result = plan.GetPlanType();
+                // Act
+                var result = plan.GetPlanType();
 
-        // Assert
-        result.ShouldBeOfType<TeamPlanType>();
-    }
+                // Assert
+                result.ShouldBeOfType<TeamPlanType>();
+        }
 
-    [Fact]
-    public void Name_WithFreePlan_ShouldReturnFree()
-    {
-        // Arrange
-        var plan = CreateTestPlan(PlanTypeName.Free);
+        [Fact]
+        public void Name_WithFreePlan_ShouldReturnFree()
+        {
+                // Arrange
+                var plan = CreateTestPlan(PlanTypeName.Free);
 
-        // Act
-        var result = plan.Name;
+                // Act
+                var result = plan.Name;
 
-        // Assert
-        result.ShouldBe("Free");
-    }
+                // Assert
+                result.ShouldBe("Free");
+        }
 
-    [Fact]
-    public void Description_WithIndividualPlan_ShouldReturnExpectedDescription()
-    {
-        // Arrange
-        var plan = CreateTestPlan(PlanTypeName.Individual);
+        [Fact]
+        public void Description_WithIndividualPlan_ShouldReturnExpectedDescription()
+        {
+                // Arrange
+                var plan = CreateTestPlan(PlanTypeName.Individual);
 
-        // Act
-        var result = plan.Description;
+                // Act
+                var result = plan.Description;
 
-        // Assert
-        result.ShouldBe("For individual developers building production applications");
-    }
+                // Assert
+                result.ShouldBe("For individual developers building production applications");
+        }
 
-    [Fact]
-    public void Price_WithFreePlanAndMonthlyBilling_ShouldReturnZero()
-    {
-        // Arrange
-        var plan = CreateTestPlan(PlanTypeName.Free, BillingCycle.Monthly);
+        [Fact]
+        public void Price_WithFreePlanAndMonthlyBilling_ShouldReturnZero()
+        {
+                // Arrange
+                var plan = CreateTestPlan(PlanTypeName.Free, BillingCycle.Monthly);
 
-        // Act
-        var result = plan.Price;
+                // Act
+                var result = plan.Price;
 
-        // Assert
-        result.ShouldBe(0m);
-    }
+                // Assert
+                result.ShouldBe(0m);
+        }
 
-    [Fact]
-    public void Price_WithIndividualPlanAndYearlyBilling_ShouldReturn100()
-    {
-        // Arrange
-        var plan = CreateTestPlan(PlanTypeName.Individual, BillingCycle.Yearly);
+        [Fact]
+        public void Price_WithIndividualPlanAndYearlyBilling_ShouldReturn100()
+        {
+                // Arrange
+                var plan = CreateTestPlan(PlanTypeName.Individual, BillingCycle.Yearly);
 
-        // Act
-        var result = plan.Price;
+                // Act
+                var result = plan.Price;
 
-        // Assert
-        result.ShouldBe(100m);
-    }
+                // Assert
+                result.ShouldBe(100m);
+        }
 
-    [Fact]
-    public void MonthlyRequestLimit_WithTeamPlan_ShouldReturn100000()
-    {
-        // Arrange
-        var plan = CreateTestPlan(PlanTypeName.Team);
+        [Fact]
+        public void MonthlyRequestLimit_WithTeamPlan_ShouldReturn100000()
+        {
+                // Arrange
+                var plan = CreateTestPlan(PlanTypeName.Team);
 
-        // Act
-        var result = plan.MonthlyRequestLimit;
+                // Act
+                var result = plan.MonthlyRequestLimit;
 
-        // Assert
-        result.ShouldBe(100000);
-    }
+                // Assert
+                result.ShouldBe(100000);
+        }
 
-    [Fact]
-    public void AllowsCustomServers_WithFreePlan_ShouldReturnFalse()
-    {
-        // Arrange
-        var plan = CreateTestPlan(PlanTypeName.Free);
+        [Fact]
+        public void AllowsCustomServers_WithFreePlan_ShouldReturnFalse()
+        {
+                // Arrange
+                var plan = CreateTestPlan(PlanTypeName.Free);
 
-        // Act
-        var result = plan.AllowsCustomServers;
+                // Act
+                var result = plan.AllowsCustomServers;
 
-        // Assert
-        result.ShouldBeFalse();
-    }
+                // Assert
+                result.ShouldBeFalse();
+        }
 
-    [Fact]
-    public void AllowsTeamManagement_WithTeamPlan_ShouldReturnTrue()
-    {
-        // Arrange
-        var plan = CreateTestPlan(PlanTypeName.Team);
+        [Fact]
+        public void AllowsTeamManagement_WithTeamPlan_ShouldReturnTrue()
+        {
+                // Arrange
+                var plan = CreateTestPlan(PlanTypeName.Team);
 
-        // Act
-        var result = plan.AllowsTeamManagement;
+                // Act
+                var result = plan.AllowsTeamManagement;
 
-        // Assert
-        result.ShouldBeTrue();
-    }
+                // Assert
+                result.ShouldBeTrue();
+        }
 }
