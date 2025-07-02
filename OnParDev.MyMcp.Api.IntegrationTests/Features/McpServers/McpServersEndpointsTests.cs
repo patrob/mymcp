@@ -45,7 +45,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
-
         var serverDto = await response.Content.ReadFromJsonAsync<ServerInstanceDto>();
         serverDto.ShouldNotBeNull();
         serverDto.Name.ShouldBe(request.Name);
@@ -85,7 +84,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
         var servers = await response.Content.ReadFromJsonAsync<List<ServerInstanceDto>>();
         servers.ShouldNotBeNull();
         servers!.Count.ShouldBe(1);
@@ -105,7 +103,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
         var serverDto = await response.Content.ReadFromJsonAsync<ServerInstanceDto>();
         serverDto.ShouldNotBeNull();
         serverDto!.Id.ShouldBe(server.Id);
@@ -137,7 +134,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
         var serverDto = await response.Content.ReadFromJsonAsync<ServerInstanceDto>();
         serverDto.ShouldNotBeNull();
         serverDto!.Status.ShouldBe(ServerStatus.Stopped);
@@ -173,7 +169,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
         var health = await response.Content.ReadFromJsonAsync<ServerHealthResponse>();
         health.ShouldNotBeNull();
         health!.IsHealthy.ShouldBeTrue();
