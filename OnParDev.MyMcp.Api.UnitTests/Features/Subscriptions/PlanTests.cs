@@ -1,5 +1,5 @@
 using AutoFixture;
-using FluentAssertions;
+using Shouldly;
 using OnParDev.MyMcp.Api.Features.Subscriptions.Entities;
 using Xunit;
 
@@ -35,7 +35,7 @@ public class PlanTests
         var result = plan.GetPlanType();
 
         // Assert
-        result.Should().BeOfType<FreePlanType>();
+        result.ShouldBeOfType<FreePlanType>();
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class PlanTests
         var result = plan.GetPlanType();
 
         // Assert
-        result.Should().BeOfType<IndividualPlanType>();
+        result.ShouldBeOfType<IndividualPlanType>();
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class PlanTests
         var result = plan.GetPlanType();
 
         // Assert
-        result.Should().BeOfType<TeamPlanType>();
+        result.ShouldBeOfType<TeamPlanType>();
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public class PlanTests
         var result = plan.Name;
 
         // Assert
-        result.Should().Be("Free");
+        result.ShouldBe("Free");
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class PlanTests
         var result = plan.Description;
 
         // Assert
-        result.Should().Be("For individual developers building production applications");
+        result.ShouldBe("For individual developers building production applications");
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class PlanTests
         var result = plan.Price;
 
         // Assert
-        result.Should().Be(0m);
+        result.ShouldBe(0m);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class PlanTests
         var result = plan.Price;
 
         // Assert
-        result.Should().Be(100m);
+        result.ShouldBe(100m);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class PlanTests
         var result = plan.MonthlyRequestLimit;
 
         // Assert
-        result.Should().Be(100000);
+        result.ShouldBe(100000);
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public class PlanTests
         var result = plan.AllowsCustomServers;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -152,6 +152,6 @@ public class PlanTests
         var result = plan.AllowsTeamManagement;
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 }

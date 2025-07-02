@@ -26,6 +26,16 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsy
         .WithPassword("testpass")
         .Build();
 
+    public new HttpClient CreateClient()
+    {
+        var client = base.CreateClient();
+        
+        // Add test authentication header
+        client.DefaultRequestHeaders.Add("Authorization", "Bearer test-token");
+        
+        return client;
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
@@ -38,14 +48,6 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsy
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(_dbContainer.GetConnectionString()));
 
-            // Replace authorization policy to allow anonymous access for integration tests
-            services.AddAuthorization(options =>
-            {
-                options.DefaultPolicy = new AuthorizationPolicyBuilder()
-                    .RequireAssertion(_ => true) // Allow all requests
-                    .Build();
-            });
-
             // Replace AuthService with a mock that returns a test user
             services.RemoveAll<OnParDev.MyMcp.Api.Features.Auth.IAuthService>();
             services.AddSingleton<OnParDev.MyMcp.Api.Features.Auth.IAuthService, TestAuthService>();
@@ -55,6 +57,28 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsy
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             context.Database.EnsureCreated();
+        });
+
+        // Override authentication/authorization configuration completely
+        builder.ConfigureServices(services =>
+        {
+            // Add test authentication that always succeeds
+            services.AddAuthentication("Test")
+                .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>("Test", options => { });
+
+            // Completely disable authorization for integration tests
+            services.AddAuthorization(options =>
+            {
+                options.DefaultPolicy = new AuthorizationPolicyBuilder()
+                    .RequireAssertion(_ => true)
+                    .Build();
+                
+                // Replace the authorization service with one that always allows
+                options.InvokeHandlersAfterFailure = false;
+            });
+            
+            // Replace the authorization service to always allow
+            services.AddSingleton<IAuthorizationService, AlwaysAllowAuthorizationService>();
         });
 
         builder.UseEnvironment("Testing");
@@ -146,6 +170,39 @@ public class TestAuthService : IAuthService
     public async Task<User?> GetCurrentUserAsync(HttpContext context)
     {
         // For integration tests, always return the test user
-        return await GetUserByClerkIdAsync("test-user-id");
+        var testUser = await GetUserByClerkIdAsync("test-user-id");
+        
+        // If user doesn't exist, create one on the fly
+        if (testUser == null)
+        {
+            testUser = new User
+            {
+                Id = Guid.NewGuid(),
+                ClerkUserId = "test-user-id",
+                Email = "test@example.com",
+                FirstName = "Test",
+                LastName = "User",
+                Role = UserRole.User,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.Users.Add(testUser);
+            await _context.SaveChangesAsync();
+        }
+        
+        return testUser;
+    }
+}
+
+public class AlwaysAllowAuthorizationService : IAuthorizationService
+{
+    public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, IEnumerable<IAuthorizationRequirement> requirements)
+    {
+        return Task.FromResult(AuthorizationResult.Success());
+    }
+
+    public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, string policyName)
+    {
+        return Task.FromResult(AuthorizationResult.Success());
     }
 }

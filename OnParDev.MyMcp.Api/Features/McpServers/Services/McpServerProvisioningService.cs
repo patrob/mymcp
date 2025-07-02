@@ -16,15 +16,21 @@ public class McpServerProvisioningService : IMcpServerProvisioningService
     private readonly IContainerOrchestrator _containerOrchestrator;
     private readonly IServerInstanceRepository _serverRepository;
     private readonly IUsageTracker _usageTracker;
+    private readonly IContainerSpecRepository _containerSpecRepository;
+    private readonly IMcpServerTemplateRepository _templateRepository;
 
     public McpServerProvisioningService(
         IContainerOrchestrator containerOrchestrator,
         IServerInstanceRepository serverRepository,
-        IUsageTracker usageTracker)
+        IUsageTracker usageTracker,
+        IContainerSpecRepository containerSpecRepository,
+        IMcpServerTemplateRepository templateRepository)
     {
         _containerOrchestrator = containerOrchestrator;
         _serverRepository = serverRepository;
         _usageTracker = usageTracker;
+        _containerSpecRepository = containerSpecRepository;
+        _templateRepository = templateRepository;
     }
 
     public async Task<ServerInstance> ProvisionGitHubServerAsync(Guid userId, CreateGitHubServerRequest request)
@@ -38,6 +44,19 @@ public class McpServerProvisioningService : IMcpServerProvisioningService
         };
 
         var template = GitHubMcpServerTemplate.Create();
+        
+        // Ensure the template exists in the database
+        var existingTemplate = await _templateRepository.GetByNameAndVersionAsync(template.Name, template.Version);
+            
+        if (existingTemplate == null)
+        {
+            template = await _templateRepository.CreateAsync(template);
+        }
+        else
+        {
+            template = existingTemplate;
+        }
+        
         var serverId = Guid.NewGuid();
 
         var containerRequest = new ContainerStartRequest(
@@ -54,6 +73,22 @@ public class McpServerProvisioningService : IMcpServerProvisioningService
 
         var containerResult = await _containerOrchestrator.StartContainerAsync(containerRequest);
 
+        // Create a proper ContainerSpec
+        var containerSpec = new ContainerSpec
+        {
+            Id = Guid.NewGuid(),
+            Name = "GitHub MCP Container",
+            Description = "Container specification for GitHub MCP server",
+            ImageName = "mcp-github-server",
+            ImageTag = "latest",
+            CpuLimit = 1000,
+            MemoryLimit = 512,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        containerSpec = await _containerSpecRepository.CreateAsync(containerSpec);
+
         var serverInstance = new ServerInstance
         {
             Id = serverId,
@@ -63,7 +98,7 @@ public class McpServerProvisioningService : IMcpServerProvisioningService
             ContainerInstanceId = containerResult.ContainerInstanceId,
             Status = MapContainerStatusToServerStatus(containerResult.Status),
             McpServerTemplateId = template.Id,
-            ContainerSpecId = Guid.NewGuid(), // TODO: Create proper container spec
+            ContainerSpecId = containerSpec.Id,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -77,7 +112,7 @@ public class McpServerProvisioningService : IMcpServerProvisioningService
     public async Task<bool> StopServerAsync(Guid serverId)
     {
         var serverInstance = await _serverRepository.GetByIdAsync(serverId);
-        if (serverInstance == null)
+        if (serverInstance == null || serverInstance.ContainerInstanceId == null)
             return false;
 
         var result = await _containerOrchestrator.StopContainerAsync(serverInstance.ContainerInstanceId);
@@ -95,7 +130,7 @@ public class McpServerProvisioningService : IMcpServerProvisioningService
     public async Task<ServerHealthResponse?> GetServerHealthAsync(Guid serverId)
     {
         var serverInstance = await _serverRepository.GetByIdAsync(serverId);
-        if (serverInstance == null)
+        if (serverInstance == null || serverInstance.ContainerInstanceId == null)
             return null;
 
         var healthResult = await _containerOrchestrator.GetContainerHealthAsync(serverInstance.ContainerInstanceId);

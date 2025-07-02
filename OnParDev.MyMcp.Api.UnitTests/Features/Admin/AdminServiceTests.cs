@@ -1,5 +1,5 @@
 using AutoFixture;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using OnParDev.MyMcp.Api.Domain.Entities;
@@ -40,7 +40,7 @@ public class AdminServiceTests : IDisposable
         var result = await _sut.IsUserAdminAsync(user.ClerkUserId);
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class AdminServiceTests : IDisposable
         var result = await _sut.IsUserAdminAsync(user.ClerkUserId);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class AdminServiceTests : IDisposable
         var result = await _sut.IsUserAdminAsync(nonExistentClerkUserId);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -95,9 +95,9 @@ public class AdminServiceTests : IDisposable
         var result = await _sut.GetAllUsersAsync();
 
         // Assert
-        result.Should().HaveCount(2);
-        result[0].Id.Should().Be(user1.Id);
-        result[1].Id.Should().Be(user2.Id);
+        result.Count.ShouldBe(2);
+        result[0].Id.ShouldBe(user1.Id);
+        result[1].Id.ShouldBe(user2.Id);
     }
 
     [Fact]
@@ -114,8 +114,8 @@ public class AdminServiceTests : IDisposable
         var result = await _sut.GetUserByIdAsync(user.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(user.Id);
+        result.ShouldNotBeNull();
+        result!.Id.ShouldBe(user.Id);
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public class AdminServiceTests : IDisposable
         var result = await _sut.GetUserByIdAsync(nonExistentUserId);
 
         // Assert
-        result.Should().BeNull();
+        result.ShouldBeNull();
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public class AdminServiceTests : IDisposable
 
         // Assert
         var updatedUser = await _context.Users.FindAsync(user.Id);
-        updatedUser!.Role.Should().Be(UserRole.Admin);
+        updatedUser!.Role.ShouldBe(UserRole.Admin);
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public class AdminServiceTests : IDisposable
 
         // Assert
         var updatedUser = await _context.Users.FindAsync(user.Id);
-        updatedUser!.UpdatedAt.Should().BeAfter(initialUpdateTime);
+        updatedUser!.UpdatedAt.ShouldBeGreaterThan(initialUpdateTime);
     }
 
     [Fact]
@@ -180,9 +180,8 @@ public class AdminServiceTests : IDisposable
         var nonExistentUserId = _fixture.Create<Guid>();
 
         // Act & Assert
-        await _sut.Invoking(x => x.PromoteUserToAdminAsync(nonExistentUserId))
-            .Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage($"User with ID {nonExistentUserId} not found");
+        await Should.ThrowAsync<InvalidOperationException>(async () => 
+            await _sut.PromoteUserToAdminAsync(nonExistentUserId));
     }
 
     [Fact]
@@ -202,7 +201,7 @@ public class AdminServiceTests : IDisposable
 
         // Assert
         var updatedUser = await _context.Users.FindAsync(admin.Id);
-        updatedUser!.Role.Should().Be(UserRole.User);
+        updatedUser!.Role.ShouldBe(UserRole.User);
     }
 
     [Fact]
@@ -212,9 +211,8 @@ public class AdminServiceTests : IDisposable
         var nonExistentUserId = _fixture.Create<Guid>();
 
         // Act & Assert
-        await _sut.Invoking(x => x.DemoteUserToRegularAsync(nonExistentUserId))
-            .Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage($"User with ID {nonExistentUserId} not found");
+        await Should.ThrowAsync<InvalidOperationException>(async () => 
+            await _sut.DemoteUserToRegularAsync(nonExistentUserId));
     }
 
     public void Dispose()

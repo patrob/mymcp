@@ -1,5 +1,5 @@
 using AutoFixture;
-using FluentAssertions;
+using Shouldly;
 using OnParDev.MyMcp.Api.Features.Usage.Entities;
 using Xunit;
 
@@ -37,7 +37,7 @@ public class UserUsageTests
         var result = userUsage.HasExceededLimit(monthlyLimit);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public class UserUsageTests
         var result = userUsage.HasExceededLimit(monthlyLimit);
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class UserUsageTests
         var result = userUsage.HasExceededLimit(monthlyLimit);
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class UserUsageTests
         userUsage.IncrementRequestCount();
 
         // Assert
-        userUsage.RequestCount.Should().Be(26);
+        userUsage.RequestCount.ShouldBe(26);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class UserUsageTests
         userUsage.IncrementRequestCount();
 
         // Assert
-        userUsage.LastUpdated.Should().BeAfter(initialTimestamp);
+        userUsage.LastUpdated.ShouldBeGreaterThan(initialTimestamp);
     }
 
     [Fact]
@@ -107,6 +107,6 @@ public class UserUsageTests
         userUsage.IncrementRequestCount();
 
         // Assert
-        userUsage.RequestCount.Should().Be(3);
+        userUsage.RequestCount.ShouldBe(3);
     }
 }

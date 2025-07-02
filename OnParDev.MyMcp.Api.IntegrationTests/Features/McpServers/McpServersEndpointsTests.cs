@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using AutoFixture;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OnParDev.MyMcp.Api.Domain.Entities;
@@ -44,13 +44,13 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         var response = await _client.PostAsJsonAsync("/api/v1/mcp-servers/github", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.StatusCode.ShouldBe(HttpStatusCode.Created);
         
         var serverDto = await response.Content.ReadFromJsonAsync<ServerInstanceDto>();
-        serverDto.Should().NotBeNull();
-        serverDto!.Name.Should().Be(request.Name);
-        serverDto.Description.Should().Be(request.Description);
-        serverDto.Status.Should().BeOneOf(ServerStatus.Starting, ServerStatus.Running);
+        serverDto.ShouldNotBeNull();
+        serverDto.Name.ShouldBe(request.Name);
+        serverDto.Description.ShouldBe(request.Description);
+        serverDto.Status.ShouldBeOneOf(ServerStatus.Starting, ServerStatus.Running);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         var response = await _client.PostAsJsonAsync("/api/v1/mcp-servers/github", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -84,13 +84,13 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         var response = await _client.GetAsync("/api/v1/mcp-servers");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
         
         var servers = await response.Content.ReadFromJsonAsync<List<ServerInstanceDto>>();
-        servers.Should().NotBeNull();
-        servers!.Should().HaveCount(1);
-        servers[0].Id.Should().Be(server.Id);
-        servers[0].Name.Should().Be(server.Name);
+        servers.ShouldNotBeNull();
+        servers!.Count.ShouldBe(1);
+        servers[0].Id.ShouldBe(server.Id);
+        servers[0].Name.ShouldBe(server.Name);
     }
 
     [Fact]
@@ -104,12 +104,12 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         var response = await _client.GetAsync($"/api/v1/mcp-servers/{server.Id}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
         
         var serverDto = await response.Content.ReadFromJsonAsync<ServerInstanceDto>();
-        serverDto.Should().NotBeNull();
-        serverDto!.Id.Should().Be(server.Id);
-        serverDto.Name.Should().Be(server.Name);
+        serverDto.ShouldNotBeNull();
+        serverDto!.Id.ShouldBe(server.Id);
+        serverDto.Name.ShouldBe(server.Name);
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         var response = await _client.GetAsync($"/api/v1/mcp-servers/{nonExistentId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -136,11 +136,11 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         var response = await _client.PostAsync($"/api/v1/mcp-servers/{server.Id}/stop", null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
         
         var serverDto = await response.Content.ReadFromJsonAsync<ServerInstanceDto>();
-        serverDto.Should().NotBeNull();
-        serverDto!.Status.Should().Be(ServerStatus.Stopped);
+        serverDto.ShouldNotBeNull();
+        serverDto!.Status.ShouldBe(ServerStatus.Stopped);
     }
 
     [Fact]
@@ -154,11 +154,11 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         var response = await _client.DeleteAsync($"/api/v1/mcp-servers/{server.Id}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
         // Verify server is deleted
         var getResponse = await _client.GetAsync($"/api/v1/mcp-servers/{server.Id}");
-        getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        getResponse.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -172,12 +172,12 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         var response = await _client.GetAsync($"/api/v1/mcp-servers/{server.Id}/health");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
         
         var health = await response.Content.ReadFromJsonAsync<ServerHealthResponse>();
-        health.Should().NotBeNull();
-        health!.IsHealthy.Should().BeTrue();
-        health.Status.Should().Be(ServerStatus.Running);
+        health.ShouldNotBeNull();
+        health!.IsHealthy.ShouldBeTrue();
+        health.Status.ShouldBe(ServerStatus.Running);
     }
 
     private async Task<User> CreateTestUserWithSubscriptionAsync()
@@ -188,13 +188,21 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         // Use specific timestamps to avoid PostgreSQL conversion issues
         var baseTime = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        // Use unique identifiers for each test to avoid constraint violations
-        var uniqueId = Guid.NewGuid().ToString("N")[..8];
+        // Use the same ClerkUserId that TestAuthService returns
+        const string testClerkUserId = "test-user-id";
+        
+        // Check if user already exists
+        var existingUser = await context.Users
+            .FirstOrDefaultAsync(u => u.ClerkUserId == testClerkUserId);
+            
+        if (existingUser != null)
+            return existingUser;
+
         var user = new User
         {
             Id = Guid.NewGuid(),
-            ClerkUserId = $"test-user-{uniqueId}",
-            Email = $"test-{uniqueId}@example.com",
+            ClerkUserId = testClerkUserId,
+            Email = "test@example.com",
             FirstName = "Test",
             LastName = "User",
             Role = UserRole.User,

@@ -9,6 +9,8 @@ public static class DependencyRegistration
         // Register services with proper lifetime management
         services.AddScoped<IMcpServerProvisioningService, McpServerProvisioningService>();
         services.AddScoped<IServerInstanceRepository, ServerInstanceRepository>();
+        services.AddScoped<IContainerSpecRepository, ContainerSpecRepository>();
+        services.AddScoped<IMcpServerTemplateRepository, McpServerTemplateRepository>();
         services.AddScoped<IUsageTracker, UsageTracker>();
         
         // Register mock container orchestrator for now

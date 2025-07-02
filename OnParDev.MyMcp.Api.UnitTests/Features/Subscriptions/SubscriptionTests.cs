@@ -1,5 +1,5 @@
 using AutoFixture;
-using FluentAssertions;
+using Shouldly;
 using OnParDev.MyMcp.Api.Features.Subscriptions.Entities;
 using Xunit;
 
@@ -51,7 +51,7 @@ public class SubscriptionTests
         var result = subscription.IsActive;
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class SubscriptionTests
         var result = subscription.IsActive;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class SubscriptionTests
         var result = subscription.IsActive;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class SubscriptionTests
         var result = subscription.IsActive;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class SubscriptionTests
         var result = subscription.IsActive;
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -143,7 +143,7 @@ public class SubscriptionTests
         var result = subscription.CanMakeRequest(currentMonthlyRequests);
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class SubscriptionTests
         var result = subscription.CanMakeRequest(currentMonthlyRequests);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public class SubscriptionTests
         var result = subscription.CanMakeRequest(currentMonthlyRequests);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public class SubscriptionTests
         var result = subscription.CanCreateServer(currentServerCount);
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -223,6 +223,6 @@ public class SubscriptionTests
         var result = subscription.CanCreateServer(currentServerCount);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 }

@@ -1,5 +1,5 @@
 using AutoFixture;
-using FluentAssertions;
+using Shouldly;
 using OnParDev.MyMcp.Api.Features.McpServers.Entities;
 using OnParDev.MyMcp.Api.Domain.Entities;
 using Xunit;
@@ -17,7 +17,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.Name.Should().Be("GitHub MCP Server");
+        template.Name.ShouldBe("GitHub MCP Server");
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.Description.Should().Be("Access GitHub repositories, issues, pull requests, and manage GitHub workflows through MCP protocol");
+        template.Description.ShouldBe("Access GitHub repositories, issues, pull requests, and manage GitHub workflows through MCP protocol");
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.Category.Should().Be("Version Control");
+        template.Category.ShouldBe("Version Control");
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.IsOfficial.Should().BeTrue();
+        template.IsOfficial.ShouldBeTrue();
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.Capabilities.Should().Contain(c => c.Name == "Repository Access" && c.IsRequired);
+        template.Capabilities.ShouldContain(c => c.Name == "Repository Access" && c.IsRequired);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.Capabilities.Should().Contain(c => c.Name == "Issue Management");
+        template.Capabilities.ShouldContain(c => c.Name == "Issue Management");
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.Capabilities.Should().Contain(c => c.Name == "Pull Request Management");
+        template.Capabilities.ShouldContain(c => c.Name == "Pull Request Management");
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.DefaultConfiguration.Should().ContainKey("GITHUB_TOKEN");
+        template.DefaultConfiguration.ShouldContainKey("GITHUB_TOKEN");
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.DefaultConfiguration.Should().ContainKey("GITHUB_REPOSITORY");
+        template.DefaultConfiguration.ShouldContainKey("GITHUB_REPOSITORY");
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.DocumentationUrl.Should().Be("https://github.com/modelcontextprotocol/servers/tree/main/src/github");
+        template.DocumentationUrl.ShouldBe("https://github.com/modelcontextprotocol/servers/tree/main/src/github");
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.RepositoryUrl.Should().Be("https://github.com/modelcontextprotocol/servers");
+        template.RepositoryUrl.ShouldBe("https://github.com/modelcontextprotocol/servers");
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class GitHubMcpServerTemplateTests
         var template = GitHubMcpServerTemplate.Create();
 
         // Assert
-        template.Version.Should().Be("1.0.0");
+        template.Version.ShouldBe("1.0.0");
     }
 }
 
@@ -149,7 +149,7 @@ public class GitHubMcpServerConfigurationTests
         var result = config.IsValid();
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -166,7 +166,7 @@ public class GitHubMcpServerConfigurationTests
         var result = config.IsValid();
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public class GitHubMcpServerConfigurationTests
         var result = config.IsValid();
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -200,7 +200,7 @@ public class GitHubMcpServerConfigurationTests
         var result = config.IsValid();
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -217,8 +217,8 @@ public class GitHubMcpServerConfigurationTests
         var envVars = config.GetEnvironmentVariables();
 
         // Assert
-        envVars.Should().ContainKey("GITHUB_TOKEN");
-        envVars["GITHUB_TOKEN"].Should().Be("ghp_testtoken123");
+        envVars.ShouldContainKey("GITHUB_TOKEN");
+        envVars["GITHUB_TOKEN"].ShouldBe("ghp_testtoken123");
     }
 
     [Fact]
@@ -235,8 +235,8 @@ public class GitHubMcpServerConfigurationTests
         var envVars = config.GetEnvironmentVariables();
 
         // Assert
-        envVars.Should().ContainKey("GITHUB_REPOSITORY");
-        envVars["GITHUB_REPOSITORY"].Should().Be("test/repo");
+        envVars.ShouldContainKey("GITHUB_REPOSITORY");
+        envVars["GITHUB_REPOSITORY"].ShouldBe("test/repo");
     }
 
     [Fact]
@@ -253,6 +253,6 @@ public class GitHubMcpServerConfigurationTests
         var envVars = config.GetEnvironmentVariables();
 
         // Assert
-        envVars.Should().NotContainKey("GITHUB_REPOSITORY");
+        envVars.ShouldNotContainKey("GITHUB_REPOSITORY");
     }
 }

@@ -1,5 +1,5 @@
 using AutoFixture;
-using FluentAssertions;
+using Shouldly;
 using NSubstitute;
 using OnParDev.MyMcp.Api.Domain.Entities;
 using OnParDev.MyMcp.Api.Features.McpServers.Services;
@@ -15,6 +15,8 @@ public class McpServerProvisioningServiceTests
     private readonly IContainerOrchestrator _mockContainerOrchestrator;
     private readonly IServerInstanceRepository _mockServerRepository;
     private readonly IUsageTracker _mockUsageTracker;
+    private readonly IContainerSpecRepository _mockContainerSpecRepository;
+    private readonly IMcpServerTemplateRepository _mockTemplateRepository;
     private readonly McpServerProvisioningService _sut;
 
     public McpServerProvisioningServiceTests()
@@ -22,10 +24,14 @@ public class McpServerProvisioningServiceTests
         _mockContainerOrchestrator = Substitute.For<IContainerOrchestrator>();
         _mockServerRepository = Substitute.For<IServerInstanceRepository>();
         _mockUsageTracker = Substitute.For<IUsageTracker>();
+        _mockContainerSpecRepository = Substitute.For<IContainerSpecRepository>();
+        _mockTemplateRepository = Substitute.For<IMcpServerTemplateRepository>();
         _sut = new McpServerProvisioningService(
             _mockContainerOrchestrator,
             _mockServerRepository,
-            _mockUsageTracker);
+            _mockUsageTracker,
+            _mockContainerSpecRepository,
+            _mockTemplateRepository);
     }
 
     [Fact]
@@ -41,6 +47,25 @@ public class McpServerProvisioningServiceTests
             .Without(u => u.ServerInstances)
             .Create();
 
+        var template = _fixture.Build<McpServerTemplate>()
+            .Without(t => t.ServerInstances)
+            .Create();
+        var containerSpec = _fixture.Build<ContainerSpec>()
+            .Without(cs => cs.ServerInstances)
+            .Create();
+
+        _mockTemplateRepository
+            .GetByNameAndVersionAsync(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.FromResult<McpServerTemplate?>(null));
+
+        _mockTemplateRepository
+            .CreateAsync(Arg.Any<McpServerTemplate>())
+            .Returns(Task.FromResult(template));
+
+        _mockContainerSpecRepository
+            .CreateAsync(Arg.Any<ContainerSpec>())
+            .Returns(Task.FromResult(containerSpec));
+
         _mockContainerOrchestrator
             .StartContainerAsync(Arg.Any<ContainerStartRequest>())
             .Returns(Task.FromResult(new ContainerStartResult 
@@ -55,9 +80,9 @@ public class McpServerProvisioningServiceTests
         var result = await _sut.ProvisionGitHubServerAsync(user.Id, request);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be(request.Name);
-        result.Status.Should().Be(ServerStatus.Running);
+        result.ShouldNotBeNull();
+        result.Name.ShouldBe(request.Name);
+        result.Status.ShouldBe(ServerStatus.Running);
     }
 
     [Fact]
@@ -71,17 +96,38 @@ public class McpServerProvisioningServiceTests
         var userId = _fixture.Create<Guid>();
 
         // Act & Assert
-        await _sut.Invoking(x => x.ProvisionGitHubServerAsync(userId, request))
-            .Should().ThrowAsync<ArgumentException>()
-            .WithMessage("GitHub token is required");
+        await Should.ThrowAsync<ArgumentException>(async () => 
+            await _sut.ProvisionGitHubServerAsync(userId, request));
     }
 
     [Fact]
     public async Task ProvisionGitHubServerAsync_ShouldTrackUsage()
     {
         // Arrange
-        var request = _fixture.Create<CreateGitHubServerRequest>();
+        var request = _fixture.Build<CreateGitHubServerRequest>()
+            .With(r => r.GitHubToken, "ghp_validtoken123")
+            .With(r => r.Repository, "test/repo")
+            .Create();
         var userId = _fixture.Create<Guid>();
+
+        var template = _fixture.Build<McpServerTemplate>()
+            .Without(t => t.ServerInstances)
+            .Create();
+        var containerSpec = _fixture.Build<ContainerSpec>()
+            .Without(cs => cs.ServerInstances)
+            .Create();
+
+        _mockTemplateRepository
+            .GetByNameAndVersionAsync(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.FromResult<McpServerTemplate?>(null));
+
+        _mockTemplateRepository
+            .CreateAsync(Arg.Any<McpServerTemplate>())
+            .Returns(Task.FromResult(template));
+
+        _mockContainerSpecRepository
+            .CreateAsync(Arg.Any<ContainerSpec>())
+            .Returns(Task.FromResult(containerSpec));
 
         _mockContainerOrchestrator
             .StartContainerAsync(Arg.Any<ContainerStartRequest>())
@@ -103,8 +149,30 @@ public class McpServerProvisioningServiceTests
     public async Task ProvisionGitHubServerAsync_ShouldSaveServerInstance()
     {
         // Arrange
-        var request = _fixture.Create<CreateGitHubServerRequest>();
+        var request = _fixture.Build<CreateGitHubServerRequest>()
+            .With(r => r.GitHubToken, "ghp_validtoken123")
+            .With(r => r.Repository, "test/repo")
+            .Create();
         var userId = _fixture.Create<Guid>();
+
+        var template = _fixture.Build<McpServerTemplate>()
+            .Without(t => t.ServerInstances)
+            .Create();
+        var containerSpec = _fixture.Build<ContainerSpec>()
+            .Without(cs => cs.ServerInstances)
+            .Create();
+
+        _mockTemplateRepository
+            .GetByNameAndVersionAsync(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.FromResult<McpServerTemplate?>(null));
+
+        _mockTemplateRepository
+            .CreateAsync(Arg.Any<McpServerTemplate>())
+            .Returns(Task.FromResult(template));
+
+        _mockContainerSpecRepository
+            .CreateAsync(Arg.Any<ContainerSpec>())
+            .Returns(Task.FromResult(containerSpec));
 
         _mockContainerOrchestrator
             .StartContainerAsync(Arg.Any<ContainerStartRequest>())
@@ -128,8 +196,30 @@ public class McpServerProvisioningServiceTests
     public async Task ProvisionGitHubServerAsync_WhenContainerFails_ShouldMarkServerAsFailed()
     {
         // Arrange
-        var request = _fixture.Create<CreateGitHubServerRequest>();
+        var request = _fixture.Build<CreateGitHubServerRequest>()
+            .With(r => r.GitHubToken, "ghp_validtoken123")
+            .With(r => r.Repository, "test/repo")
+            .Create();
         var userId = _fixture.Create<Guid>();
+
+        var template = _fixture.Build<McpServerTemplate>()
+            .Without(t => t.ServerInstances)
+            .Create();
+        var containerSpec = _fixture.Build<ContainerSpec>()
+            .Without(cs => cs.ServerInstances)
+            .Create();
+
+        _mockTemplateRepository
+            .GetByNameAndVersionAsync(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.FromResult<McpServerTemplate?>(null));
+
+        _mockTemplateRepository
+            .CreateAsync(Arg.Any<McpServerTemplate>())
+            .Returns(Task.FromResult(template));
+
+        _mockContainerSpecRepository
+            .CreateAsync(Arg.Any<ContainerSpec>())
+            .Returns(Task.FromResult(containerSpec));
 
         _mockContainerOrchestrator
             .StartContainerAsync(Arg.Any<ContainerStartRequest>())
@@ -144,7 +234,7 @@ public class McpServerProvisioningServiceTests
         var result = await _sut.ProvisionGitHubServerAsync(userId, request);
 
         // Assert
-        result.Status.Should().Be(ServerStatus.Failed);
+        result.Status.ShouldBe(ServerStatus.Failed);
     }
 
     [Fact]
@@ -175,7 +265,7 @@ public class McpServerProvisioningServiceTests
         var result = await _sut.StopServerAsync(serverId);
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
         await _mockContainerOrchestrator.Received(1)
             .StopContainerAsync("container-123");
     }
@@ -193,7 +283,7 @@ public class McpServerProvisioningServiceTests
         var result = await _sut.StopServerAsync(serverId);
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -228,8 +318,8 @@ public class McpServerProvisioningServiceTests
         var result = await _sut.GetServerHealthAsync(serverId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.IsHealthy.Should().BeTrue();
-        result.Status.Should().Be(ServerStatus.Running);
+        result.ShouldNotBeNull();
+        result!.IsHealthy.ShouldBeTrue();
+        result.Status.ShouldBe(ServerStatus.Running);
     }
 }
