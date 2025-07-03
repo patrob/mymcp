@@ -132,11 +132,10 @@ jobs:
           npm audit --audit-level=moderate || echo "npm audit found vulnerabilities in dev dependencies - non-blocking"
         continue-on-error: true
 
-  # Build and Test Jobs (Parallel, depends on security)
+  # Build and Test Jobs (Parallel with security)
   frontend-build-test:
     name: Frontend Build & Test
     runs-on: ubuntu-latest
-    needs: [codeql-analysis, dependency-scanning]
     defaults:
       run:
         working-directory: ./OnParDev.MyMcp.Api/ClientApp
@@ -179,8 +178,8 @@ jobs:
       - name: Run TypeScript check
         run: npx tsc --noEmit
 
-      - name: Run Vitest tests
-        run: npm test
+      - name: Run Vitest tests with coverage
+        run: npm run test:coverage
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -211,10 +210,17 @@ jobs:
           path: ./OnParDev.MyMcp.Api/ClientApp/dist/
           retention-days: 90
 
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage-prod
+          path: ./OnParDev.MyMcp.Api/ClientApp/coverage/
+          retention-days: 30
+
   backend-build-test:
     name: Backend Build & Test
     runs-on: ubuntu-latest
-    needs: [codeql-analysis, dependency-scanning]
 
     services:
       postgres:
@@ -253,11 +259,11 @@ jobs:
       - name: Build solution
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run unit tests
-        run: dotnet test OnParDev.MyMcp.Api.UnitTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/
+      - name: Run unit tests with coverage
+        run: dotnet test OnParDev.MyMcp.Api.UnitTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/ --collect:"XPlat Code Coverage" --settings coverlet.runsettings
 
-      - name: Run integration tests
-        run: dotnet test OnParDev.MyMcp.Api.IntegrationTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/
+      - name: Run integration tests with coverage
+        run: dotnet test OnParDev.MyMcp.Api.IntegrationTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/ --collect:"XPlat Code Coverage" --settings coverlet.runsettings
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=onpardev_mymcp_test;Username=postgres;Password=postgres"
           CLERK__PUBLISHABLEKEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
@@ -281,11 +287,27 @@ jobs:
           path: TestResults/
           retention-days: 30
 
+      - name: Upload unit test coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-coverage-prod
+          path: OnParDev.MyMcp.Api.UnitTests/TestResults/Coverage/
+          retention-days: 30
+        
+      - name: Upload integration test coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-coverage-prod
+          path: OnParDev.MyMcp.Api.IntegrationTests/TestResults/Coverage/
+          retention-days: 30
+
   # Infrastructure Deployment
   deploy-infrastructure:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
-    needs: [frontend-build-test, backend-build-test]
+    needs: [codeql-analysis, dependency-scanning, frontend-build-test, backend-build-test]
     if: github.event.inputs.skip_infrastructure != 'true'
     environment: production
 
@@ -364,15 +386,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ~1.0
+
       - name: Get droplet IP
         id: get-ip
         run: |
+          echo "🔍 Determining droplet IP address..."
+          
+          # Option 1: Manual input from workflow dispatch
           if [ "${{ github.event.inputs.droplet_ip }}" != "" ]; then
+            echo "✅ Using manually provided droplet IP"
             echo "droplet_ip=${{ github.event.inputs.droplet_ip }}" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.deploy-infrastructure.outputs.droplet_ip }}" != "" ]; then
+            exit 0
+          fi
+          
+          # Option 2: From infrastructure deployment job output
+          if [ "${{ needs.deploy-infrastructure.outputs.droplet_ip }}" != "" ]; then
+            echo "✅ Using droplet IP from infrastructure deployment"
             echo "droplet_ip=${{ needs.deploy-infrastructure.outputs.droplet_ip }}" >> $GITHUB_OUTPUT
-          else
-            # Fallback: get from Terraform state
+            exit 0
+          fi
+          
+          # Option 3: Fallback to Terraform state (only if infrastructure was skipped)
+          if [ "${{ needs.deploy-infrastructure.result }}" = "skipped" ]; then
+            echo "⚠️ Infrastructure deployment was skipped, reading from Terraform state..."
+            
+            if [ ! -d "infrastructure" ]; then
+              echo "❌ Infrastructure directory not found"
+              exit 1
+            fi
+            
             cd infrastructure
             export AWS_ACCESS_KEY_ID="${{ secrets.SPACES_ACCESS_KEY_ID }}"
             export AWS_SECRET_ACCESS_KEY="${{ secrets.SPACES_SECRET_ACCESS_KEY }}"
@@ -380,9 +426,34 @@ jobs:
             export SPACES_SECRET_ACCESS_KEY="${{ secrets.SPACES_SECRET_ACCESS_KEY }}"
             export TF_VAR_digitalocean_token="${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
             export TF_VAR_ssh_public_key="${{ secrets.SSH_PUBLIC_KEY }}"
-            terraform init
-            DROPLET_IP=$(terraform output -raw droplet_ip)
+            
+            echo "🔄 Initializing Terraform..."
+            if ! terraform init; then
+              echo "❌ Terraform init failed"
+              exit 1
+            fi
+            
+            echo "🔍 Getting droplet IP from Terraform state..."
+            if ! DROPLET_IP=$(terraform output -raw droplet_ip 2>/dev/null); then
+              echo "❌ Failed to get droplet IP from Terraform state"
+              echo "This may indicate that infrastructure has not been deployed yet."
+              exit 1
+            fi
+            
+            if [ -z "$DROPLET_IP" ] || [ "$DROPLET_IP" = "null" ]; then
+              echo "❌ Droplet IP is empty or null"
+              exit 1
+            fi
+            
+            echo "✅ Retrieved droplet IP from Terraform state: $DROPLET_IP"
             echo "droplet_ip=${DROPLET_IP}" >> $GITHUB_OUTPUT
+          else
+            echo "❌ No droplet IP available and infrastructure deployment did not run successfully"
+            echo "Available options:"
+            echo "  1. Provide droplet_ip via workflow_dispatch"
+            echo "  2. Ensure infrastructure deployment runs successfully"
+            echo "  3. Skip infrastructure but ensure Terraform state exists"
+            exit 1
           fi
 
       - name: Create deployment files
