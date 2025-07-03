@@ -76,8 +76,8 @@ describe('useServers', () => {
       const request: CreateGitHubServerRequest = {
         name: 'New Server',
         description: 'Test',
-        repositoryUrl: 'https://github.com/test/repo',
-        accessToken: 'token'
+        repository: 'https://github.com/test/repo',
+        gitHubToken: 'token'
       }
       vi.mocked(McpServersEndpointsService.createGitHubServer).mockResolvedValue(mockServer)
 

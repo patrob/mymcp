@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useCreateGitHubServer } from '@/hooks/useServers'
@@ -18,8 +17,8 @@ export function ServerConnectionWizard({ onServerCreated }: ServerConnectionWiza
   const [formData, setFormData] = useState<CreateGitHubServerRequest>({
     name: '',
     description: '',
-    repositoryUrl: '',
-    accessToken: ''
+    repository: '',
+    gitHubToken: ''
   })
 
   const createMutation = useCreateGitHubServer()
@@ -29,7 +28,7 @@ export function ServerConnectionWizard({ onServerCreated }: ServerConnectionWiza
     createMutation.mutate(formData, {
       onSuccess: () => {
         setOpen(false)
-        setFormData({ name: '', description: '', repositoryUrl: '', accessToken: '' })
+        setFormData({ name: '', description: '', repository: '', gitHubToken: '' })
         onServerCreated?.()
       }
     })
@@ -72,7 +71,7 @@ export function ServerConnectionWizard({ onServerCreated }: ServerConnectionWiza
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Server Name</Label>
+            <label htmlFor="name" className="block text-sm font-medium">Server Name</label>
             <Input
               id="name"
               value={formData.name}
@@ -83,33 +82,33 @@ export function ServerConnectionWizard({ onServerCreated }: ServerConnectionWiza
           </div>
           
           <div>
-            <Label htmlFor="description">Description</Label>
+            <label htmlFor="description" className="block text-sm font-medium">Description</label>
             <Textarea
               id="description"
-              value={formData.description}
+              value={formData.description || ''}
               onChange={handleInputChange('description')}
               placeholder="Optional description"
             />
           </div>
           
           <div>
-            <Label htmlFor="repositoryUrl">Repository URL</Label>
+            <label htmlFor="repository" className="block text-sm font-medium">Repository URL</label>
             <Input
-              id="repositoryUrl"
-              value={formData.repositoryUrl}
-              onChange={handleInputChange('repositoryUrl')}
+              id="repository"
+              value={formData.repository || ''}
+              onChange={handleInputChange('repository')}
               placeholder="https://github.com/user/repo"
               required
             />
           </div>
           
           <div>
-            <Label htmlFor="accessToken">GitHub Access Token</Label>
+            <label htmlFor="gitHubToken" className="block text-sm font-medium">GitHub Access Token</label>
             <Input
-              id="accessToken"
+              id="gitHubToken"
               type="password"
-              value={formData.accessToken}
-              onChange={handleInputChange('accessToken')}
+              value={formData.gitHubToken}
+              onChange={handleInputChange('gitHubToken')}
               placeholder="ghp_..."
               required
             />
