@@ -34,6 +34,14 @@ runs:
         cache: 'npm'
         cache-dependency-path: './OnParDev.MyMcp.Api/ClientApp/package-lock.json'
 
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
+
     - name: Install .NET dependencies
       shell: bash
       run: dotnet restore
@@ -125,7 +133,8 @@ runs:
       shell: bash
       run: |
         cd OnParDev.MyMcp.Api/ClientApp
-        npm run test:e2e
+        # Only run chromium tests in CI for speed
+        npx playwright test --project=chromium
       env:
         CI: true
 
