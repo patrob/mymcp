@@ -85,15 +85,20 @@ runs:
         cd OnParDev.MyMcp.Api/ClientApp
         npm run generate-api
         
-        # Stop the API server cleanly (E2E tests will start their own)
-        cd ..
-        echo "Stopping API server (PID: $API_PID)..."
-        kill $API_PID || true
-        sleep 5
-        
-        # Make sure it's really stopped
-        pkill -f "dotnet run" || true
-        echo "API server stopped"
+        # For E2E tests, keep the API server running in the background
+        # Playwright will handle the frontend webServer
+        if [ "${{ inputs.run-e2e }}" = "true" ]; then
+          echo "Keeping API server running for E2E tests (PID: $API_PID)"
+          echo "API_PID=$API_PID" >> $GITHUB_ENV
+        else
+          # Stop the API server if not running E2E tests
+          cd ..
+          echo "Stopping API server (PID: $API_PID)..."
+          kill $API_PID || true
+          sleep 5
+          pkill -f "dotnet run" || true
+          echo "API server stopped"
+        fi
       env:
         CLERK__PUBLISHABLEKEY: ${{ env.CLERK_PUBLISHABLE_KEY }}
         CLERK__AUTHORITY: ${{ env.CLERK_AUTHORITY }}
@@ -123,6 +128,17 @@ runs:
         npm run test:e2e
       env:
         CI: true
+
+    - name: Cleanup API server
+      if: inputs.run-e2e == 'true' && always()
+      shell: bash
+      run: |
+        if [ -n "$API_PID" ]; then
+          echo "Stopping API server (PID: $API_PID)..."
+          kill $API_PID || true
+        fi
+        pkill -f "dotnet run" || true
+        echo "API server cleanup completed"
 
     - name: Build frontend
       shell: bash
