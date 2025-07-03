@@ -1,0 +1,45 @@
+# Page snapshot
+
+```yaml
+- banner:
+  - navigation:
+    - text: MyMcp
+    - link "Home":
+      - /url: /
+- main:
+  - img
+  - heading "Host. Connect. Scale." [level=1]
+  - heading "Powered by MCP." [level=2]
+  - paragraph: Your gateway to hosted MCP servers. Connect your AI applications to powerful data sources and tools with zero infrastructure hassle.
+  - link "Get Started Free":
+    - /url: /sign-up
+  - link "Learn More":
+    - /url: "#features"
+  - heading "Starting Features" [level=2]
+  - paragraph: Everything you need to get started with hosted MCP servers
+  - img
+  - heading "Hosted MCP Servers" [level=3]
+  - paragraph: Access pre-configured MCP servers including GitHub integration. No setup required - just connect and start building.
+  - img
+  - heading "Free Tier Access" [level=3]
+  - paragraph: Get started with 100 requests per month completely free. Perfect for testing and small projects.
+  - img
+  - heading "Instant Connection" [level=3]
+  - paragraph: Connect your AI applications in minutes with our simple authentication and connection process.
+  - heading "Upcoming Features" [level=2]
+  - paragraph: Exciting capabilities coming soon to expand your MCP possibilities
+  - img
+  - heading "MCP Marketplace" [level=3]
+  - paragraph: Browse and deploy community-created MCP servers for databases, APIs, and specialized tools.
+  - img
+  - heading "Custom Server Deployment" [level=3]
+  - paragraph: Deploy your own MCP servers from GitHub repositories with automated security scanning and hosting.
+  - heading "Ready to get started?" [level=2]
+  - paragraph: Join the growing community of developers building the future of AI integrations with MCP.
+  - link "Start Building Today":
+    - /url: /sign-up
+- contentinfo:
+  - paragraph: © 2025 On PAR Dev, LLC. All rights reserved.
+- region "Notifications (F8)":
+  - list
+```
