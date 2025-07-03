@@ -189,7 +189,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
         // Check if user already exists
         var existingUser = await context.Users
             .FirstOrDefaultAsync(u => u.ClerkUserId == testClerkUserId);
-
         if (existingUser != null)
             return existingUser;
 

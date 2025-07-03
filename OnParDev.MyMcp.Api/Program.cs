@@ -3,6 +3,7 @@ using FluentValidation;
 using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.StaticFiles;
 using System.Text;
 using OnParDev.MyMcp.Api.Infrastructure.Data;
 using OnParDev.MyMcp.Api.Features.Auth;
@@ -103,7 +104,17 @@ app.Use(async (context, next) =>
 // Enable CORS
 app.UseCors(app.Environment.IsDevelopment() ? "Development" : "Production");
 
-app.UseStaticFiles();
+// Configure static files with no-cache headers
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Disable caching for all static files to ensure immediate updates
+        ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
+        ctx.Context.Response.Headers.Append("Pragma", "no-cache");
+        ctx.Context.Response.Headers.Append("Expires", "0");
+    }
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

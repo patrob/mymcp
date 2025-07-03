@@ -1,9 +1,56 @@
 import { UserButton } from '@clerk/clerk-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Server, Play, Square } from 'lucide-react'
+import { useServers } from '@/hooks/useServers'
+import { ServerCard } from '@/components/dashboard/ServerCard'
+import { ServerConnectionWizard } from '@/components/dashboard/ServerConnectionWizard'
+import { UsageMetrics } from '@/components/dashboard/UsageMetrics'
+import { AlertCircle, Loader2 } from 'lucide-react'
 
 export default function Dashboard() {
+  const { data: servers, isLoading, error, refetch } = useServers()
+
+  const handleServerAction = (action: string, _serverId: string) => {
+    if (action === 'configure') {
+      // Future implementation
+    }
+  }
+
+  const handleServerCreated = () => {
+    refetch()
+  }
+
+  const runningServers = servers?.filter(server => server.status === 2).length || 0
+  const totalServers = servers?.length || 0
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="flex h-16 items-center px-4">
+            <h1 className="text-xl font-semibold">OnParDev MyMcp</h1>
+            <div className="ml-auto">
+              <UserButton />
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto py-6">
+          <div className="flex items-center justify-center">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Error Loading Servers</h2>
+              <p className="text-muted-foreground mb-4">
+                Failed to load your server instances
+              </p>
+              <Button onClick={() => refetch()}>
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -23,77 +70,40 @@ export default function Dashboard() {
               Manage your MCP server instances
             </p>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Server
-          </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {/* Sample server cards */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Sample Server 1
-              </CardTitle>
-              <Server className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">Running</div>
-              <p className="text-xs text-muted-foreground">
-                Started 2 hours ago
-              </p>
-              <div className="flex gap-2 mt-4">
-                <Button size="sm" variant="outline">
-                  <Square className="h-3 w-3 mr-1" />
-                  Stop
-                </Button>
-                <Button size="sm" variant="outline">
-                  View Logs
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <UsageMetrics
+          serversActive={runningServers}
+          serversTotal={totalServers}
+        />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Sample Server 2
-              </CardTitle>
-              <Server className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-600">Stopped</div>
-              <p className="text-xs text-muted-foreground">
-                Last run 1 day ago
-              </p>
-              <div className="flex gap-2 mt-4">
-                <Button size="sm">
-                  <Play className="h-3 w-3 mr-1" />
-                  Start
-                </Button>
-                <Button size="sm" variant="outline">
-                  Configure
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading servers...</span>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {servers?.map((server) => (
+              <ServerCard
+                key={server.id}
+                server={server}
+                onAction={handleServerAction}
+              />
+            ))}
+            
+            <ServerConnectionWizard onServerCreated={handleServerCreated} />
+          </div>
+        )}
 
-          <Card className="border-dashed">
-            <CardHeader>
-              <CardTitle>Create New Server</CardTitle>
-              <CardDescription>
-                Deploy a new MCP server instance from a template
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Get Started
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        {!isLoading && servers?.length === 0 && (
+          <div className="text-center py-12">
+            <h3 className="text-lg font-semibold mb-2">No servers yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Create your first MCP server to get started
+            </p>
+          </div>
+        )}
       </main>
     </div>
   )
