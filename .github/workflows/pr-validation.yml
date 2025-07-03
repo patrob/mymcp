@@ -257,6 +257,9 @@ jobs:
     - name: Install ReportGenerator
       run: dotnet tool install -g dotnet-reportgenerator-globaltool
     
+    - name: Install jq for JSON parsing
+      run: sudo apt-get update && sudo apt-get install -y jq
+    
     - name: Download all coverage artifacts
       uses: actions/download-artifact@v4
       with:
@@ -265,12 +268,17 @@ jobs:
     - name: Generate merged backend coverage report
       run: |
         mkdir -p merged-coverage
-        reportgenerator \
-          -reports:"coverage-artifacts/unit-test-coverage/**/*.cobertura.xml;coverage-artifacts/integration-test-coverage/**/*.cobertura.xml" \
-          -targetdir:"merged-coverage" \
-          -reporttypes:"Cobertura;JsonSummary" \
-          -assemblyfilters:"-OnParDev.MyMcp.Api.UnitTests;-OnParDev.MyMcp.Api.IntegrationTests" \
-          || echo "No backend coverage found"
+        if ls coverage-artifacts/unit-test-coverage/**/*.cobertura.xml 1> /dev/null 2>&1 || ls coverage-artifacts/integration-test-coverage/**/*.cobertura.xml 1> /dev/null 2>&1; then
+          reportgenerator \
+            -reports:"coverage-artifacts/unit-test-coverage/**/*.cobertura.xml;coverage-artifacts/integration-test-coverage/**/*.cobertura.xml" \
+            -targetdir:"merged-coverage" \
+            -reporttypes:"Cobertura;JsonSummary" \
+            -assemblyfilters:"-OnParDev.MyMcp.Api.UnitTests;-OnParDev.MyMcp.Api.IntegrationTests" \
+            || echo "ReportGenerator failed, but continuing..."
+        else
+          echo "No backend coverage files found, creating empty summary"
+          echo '{"summary":{"linecoverage":0}}' > merged-coverage/Summary.json
+        fi
     
     - name: Parse coverage results
       id: coverage
@@ -278,25 +286,30 @@ jobs:
         # Parse backend coverage
         backend_coverage="0"
         if [ -f "merged-coverage/Summary.json" ]; then
-          backend_coverage=$(cat merged-coverage/Summary.json | jq -r '.summary.linecoverage // 0')
+          backend_coverage=$(cat merged-coverage/Summary.json | jq -r '.summary.linecoverage // 0' 2>/dev/null || echo "0")
         fi
         
         # Parse frontend coverage  
         frontend_coverage="0"
         if [ -f "coverage-artifacts/frontend-coverage/coverage-summary.json" ]; then
-          frontend_coverage=$(cat coverage-artifacts/frontend-coverage/coverage-summary.json | jq -r '.total.lines.pct // 0')
+          frontend_coverage=$(cat coverage-artifacts/frontend-coverage/coverage-summary.json | jq -r '.total.lines.pct // 0' 2>/dev/null || echo "0")
         fi
         
+        # Convert to integers for calculation (multiply by 100 to preserve decimal)
+        backend_int=$(echo "$backend_coverage * 100" | bc 2>/dev/null || echo "0")
+        frontend_int=$(echo "$frontend_coverage * 100" | bc 2>/dev/null || echo "0")
+        
         # Calculate combined coverage (weighted average)
-        combined_coverage=$(echo "scale=1; ($backend_coverage + $frontend_coverage) / 2" | bc -l)
+        combined_int=$(( (backend_int + frontend_int) / 2 ))
+        combined_coverage=$(echo "scale=1; $combined_int / 100" | bc 2>/dev/null || echo "0")
         
         echo "backend_coverage=$backend_coverage" >> $GITHUB_OUTPUT
         echo "frontend_coverage=$frontend_coverage" >> $GITHUB_OUTPUT  
         echo "combined_coverage=$combined_coverage" >> $GITHUB_OUTPUT
         
-        # Check minimum threshold (10%)
-        min_threshold=10
-        if (( $(echo "$combined_coverage >= $min_threshold" | bc -l) )); then
+        # Check minimum threshold (10% = 1000 in integer form)
+        min_threshold_int=1000
+        if [ "$combined_int" -ge "$min_threshold_int" ]; then
           echo "coverage_passed=true" >> $GITHUB_OUTPUT
         else
           echo "coverage_passed=false" >> $GITHUB_OUTPUT
@@ -327,7 +340,7 @@ ${statusIcon} Coverage ${coveragePassed ? 'meets' : 'below'} minimum requirement
 ### Test Results
 - **Unit Tests**: 95 tests
 - **Integration Tests**: 9 tests  
-- **Frontend Tests**: 48 tests
+- **Frontend Tests**: 70 tests
 
 ---
 *Coverage report generated for commit: ${{ github.event.pull_request.head.sha }}*`;
