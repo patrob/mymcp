@@ -1,0 +1,129 @@
+name: 'Frontend Test Suite'
+description: 'Run comprehensive frontend testing including lint, typecheck, unit tests, and E2E tests'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '22'
+  dotnet-version:
+    description: '.NET version for API generation'
+    required: false
+    default: '9.0.x'
+  run-e2e:
+    description: 'Whether to run E2E tests'
+    required: false
+    default: 'true'
+  coverage:
+    description: 'Whether to collect coverage'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup .NET (for API generation)
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: './OnParDev.MyMcp.Api/ClientApp/package-lock.json'
+
+    - name: Install .NET dependencies
+      shell: bash
+      run: dotnet restore
+
+    - name: Start API for OpenAPI generation
+      shell: bash
+      run: |
+        dotnet build --configuration Release
+        nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release &
+        sleep 30
+      env:
+        CLERK__PUBLISHABLEKEY: ${{ env.CLERK_PUBLISHABLE_KEY }}
+        CLERK__AUTHORITY: ${{ env.CLERK_AUTHORITY }}
+
+    - name: Install frontend dependencies
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npm ci
+
+    - name: Run ESLint
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npm run lint
+
+    - name: Run TypeScript check
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npx tsc --noEmit
+
+    - name: Generate API client
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npm run generate-api
+
+    - name: Run Vitest tests
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        if [ "${{ inputs.coverage }}" = "true" ]; then
+          npm run test:coverage
+        else
+          npm test
+        fi
+
+    - name: Install Playwright browsers
+      if: inputs.run-e2e == 'true'
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npx playwright install --with-deps chromium
+
+    - name: Run E2E tests
+      if: inputs.run-e2e == 'true'
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npm run test:e2e
+      env:
+        CI: true
+
+    - name: Build frontend
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npm run build
+
+    # Upload artifacts only if tests passed (no 'if: always()')
+    - name: Upload frontend coverage
+      if: inputs.coverage == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-coverage-${{ github.run_id }}
+        path: ./OnParDev.MyMcp.Api/ClientApp/coverage/
+        retention-days: 30
+
+    - name: Upload E2E test results
+      if: inputs.run-e2e == 'true' && failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report-${{ github.run_id }}
+        path: ./OnParDev.MyMcp.Api/ClientApp/playwright-report/
+        retention-days: 30
+
+    - name: Upload frontend build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build-${{ github.run_id }}
+        path: ./OnParDev.MyMcp.Api/ClientApp/dist/
+        retention-days: 90
