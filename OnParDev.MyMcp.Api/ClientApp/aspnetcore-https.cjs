@@ -21,7 +21,18 @@ if (!certificateName) {
 const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
 const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
 
+// Skip certificate creation in CI environments
+if (process.env.CI) {
+  console.log('Skipping HTTPS certificate setup in CI environment');
+  process.exit(0);
+}
+
 if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
+  // Ensure the certificate directory exists
+  if (!fs.existsSync(baseFolder)) {
+    fs.mkdirSync(baseFolder, { recursive: true });
+  }
+  
   spawn('dotnet', [
     'dev-certs',
     'https',
