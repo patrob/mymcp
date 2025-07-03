@@ -38,15 +38,10 @@ runs:
       shell: bash
       run: dotnet restore
 
-    - name: Start API for OpenAPI generation
+    - name: Build API for OpenAPI generation
       shell: bash
       run: |
         dotnet build --configuration Release
-        nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release &
-        sleep 30
-      env:
-        CLERK__PUBLISHABLEKEY: ${{ env.CLERK_PUBLISHABLE_KEY }}
-        CLERK__AUTHORITY: ${{ env.CLERK_AUTHORITY }}
 
     - name: Install frontend dependencies
       shell: bash
@@ -66,11 +61,42 @@ runs:
         cd OnParDev.MyMcp.Api/ClientApp
         npx tsc --noEmit
 
-    - name: Generate API client
+    - name: Start API server and generate API client
       shell: bash
       run: |
+        # Start API server in background for OpenAPI generation
+        echo "Starting API server for OpenAPI generation..."
+        nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release > api.log 2>&1 &
+        API_PID=$!
+        echo "API PID: $API_PID"
+        
+        # Wait for API to be ready
+        echo "Waiting for API to be ready..."
+        for i in {1..30}; do
+          if curl -f http://localhost:5099/health > /dev/null 2>&1; then
+            echo "API is ready"
+            break
+          fi
+          echo "Waiting for API... (attempt $i/30)"
+          sleep 2
+        done
+        
+        # Generate API client
         cd OnParDev.MyMcp.Api/ClientApp
         npm run generate-api
+        
+        # Stop the API server cleanly (E2E tests will start their own)
+        cd ..
+        echo "Stopping API server (PID: $API_PID)..."
+        kill $API_PID || true
+        sleep 5
+        
+        # Make sure it's really stopped
+        pkill -f "dotnet run" || true
+        echo "API server stopped"
+      env:
+        CLERK__PUBLISHABLEKEY: ${{ env.CLERK_PUBLISHABLE_KEY }}
+        CLERK__AUTHORITY: ${{ env.CLERK_AUTHORITY }}
 
     - name: Run Vitest tests
       shell: bash
