@@ -17,7 +17,16 @@
     <PackageReference Include="Shouldly" />
     <PackageReference Include="AutoFixture" />
     <PackageReference Include="NSubstitute" />
+    <PackageReference Include="coverlet.msbuild" />
   </ItemGroup>
+  
+  <PropertyGroup>
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura,json</CoverletOutputFormat>
+    <CoverletOutput>./TestResults/Coverage/</CoverletOutput>
+    <ExcludeByFile>**/Migrations/**/*</ExcludeByFile>
+    <ExcludeByAttribute>GeneratedCodeAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+  </PropertyGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />

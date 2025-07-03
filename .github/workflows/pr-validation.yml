@@ -35,8 +35,15 @@ jobs:
     - name: Run TypeScript check
       run: npx tsc --noEmit
     
-    - name: Run Vitest tests
-      run: npm test
+    - name: Run Vitest tests with coverage
+      run: npm run test:coverage
+
+    - name: Upload frontend coverage
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: frontend-coverage
+        path: ./OnParDev.MyMcp.Api/ClientApp/coverage/
 
   backend-unit-tests:
     name: Backend Unit Tests
@@ -64,15 +71,22 @@ jobs:
     - name: Build solution
       run: dotnet build --no-restore --configuration Release
     
-    - name: Run unit tests
-      run: dotnet test OnParDev.MyMcp.Api.UnitTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/
+    - name: Run unit tests with coverage
+      run: dotnet test OnParDev.MyMcp.Api.UnitTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/ --collect:"XPlat Code Coverage" --settings coverlet.runsettings
     
-    - name: Upload test results
+    - name: Upload unit test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: unit-test-results
         path: TestResults/
+        
+    - name: Upload unit test coverage
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: unit-test-coverage
+        path: OnParDev.MyMcp.Api.UnitTests/TestResults/Coverage/
 
   backend-integration-tests:
     name: Backend Integration Tests
@@ -115,19 +129,26 @@ jobs:
     - name: Build solution
       run: dotnet build --no-restore --configuration Release
     
-    - name: Run integration tests
-      run: dotnet test OnParDev.MyMcp.Api.IntegrationTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/
+    - name: Run integration tests with coverage
+      run: dotnet test OnParDev.MyMcp.Api.IntegrationTests --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/ --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       env:
         ConnectionStrings__DefaultConnection: "Host=localhost;Database=onpardev_mymcp_test;Username=postgres;Password=postgres"
         CLERK__PUBLISHABLEKEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
         CLERK__AUTHORITY: ${{ secrets.CLERK_AUTHORITY }}
     
-    - name: Upload test results
+    - name: Upload integration test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: integration-test-results
         path: TestResults/
+        
+    - name: Upload integration test coverage
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-coverage
+        path: OnParDev.MyMcp.Api.IntegrationTests/TestResults/Coverage/
 
   backend-build:
     name: Backend Build & Analysis
@@ -215,4 +236,5 @@ jobs:
       with:
         name: frontend-build
         path: ./OnParDev.MyMcp.Api/ClientApp/dist/
+
 
