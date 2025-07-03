@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { StatusBadge } from './StatusBadge'
+import type { ServerStatus } from '../../api/models/ServerStatus'
 
 describe('StatusBadge', () => {
   describe('Status Display', () => {
@@ -46,7 +47,7 @@ describe('StatusBadge', () => {
 
     it('displays unknown status for invalid status', () => {
       // Arrange & Act
-      render(<StatusBadge status={99 as any} />)
+      render(<StatusBadge status={99 as ServerStatus} />)
 
       // Assert
       expect(screen.getByText('Unknown')).toBeInTheDocument()

@@ -9,12 +9,10 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 export default function Dashboard() {
   const { data: servers, isLoading, error, refetch } = useServers()
 
-  const handleServerAction = (action: string, serverId: string) => {
-    // Handle server actions - could be extended with toast notifications, etc.
+  const handleServerAction = (action: string, _serverId: string) => {
     if (action === 'configure') {
-      // Log configuration action for future implementation
+      // Future implementation
     }
-    console.debug(`Action ${action} performed on server ${serverId}`)
   }
 
   const handleServerCreated = () => {
