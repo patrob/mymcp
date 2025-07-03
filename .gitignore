@@ -53,6 +53,10 @@ wwwroot/
 .env.test.local
 .env.production.local
 
+# Playwright test artifacts
+test-results/
+playwright-report/
+
 # Misc
 .DS_Store
 Thumbs.db

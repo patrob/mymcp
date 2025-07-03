@@ -31,7 +31,7 @@ test.describe('Authentication Flows', () => {
       // Assert - Should show development banner and dashboard content
       await expect(page.getByText('Development Mode')).toBeVisible()
       await expect(page.getByText('Authentication is disabled')).toBeVisible()
-      await expect(page.getByText('Server Instances')).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Server Instances' })).toBeVisible()
     })
   })
 

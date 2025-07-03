@@ -36,10 +36,51 @@ export async function mockConfigEndpoint(page: Page, config: ConfigurationRespon
 }
 
 /**
+ * Mocks the servers API endpoints to return empty data for testing
+ */
+async function mockServersEndpoints(page: Page) {
+  // Mock GET /api/v1/mcp-servers (getUserMcpServers)
+  await page.route('**/api/v1/mcp-servers*', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]), // Empty array of servers
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      })
+    } else if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      })
+    } else {
+      // For other methods (POST, etc.), just return success
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        }
+      })
+    }
+  })
+}
+
+/**
  * Sets up unauthenticated mode (development mode without Clerk)
  */
 export async function setupUnauthenticatedMode(page: Page) {
   await mockConfigEndpoint(page, unauthenticatedConfig)
+  await mockServersEndpoints(page)
 }
 
 /**
@@ -52,6 +93,9 @@ export async function setupAuthenticatedMode(page: Page, options: {
 } = { isSignedIn: false }) {
   // Mock the configuration endpoint
   await mockConfigEndpoint(page, authenticatedConfig)
+  
+  // Mock the servers API
+  await mockServersEndpoints(page)
 
   // Simplified approach: just mock the authentication state and let the real components handle rendering
   if (options.isSignedIn) {

@@ -69,37 +69,37 @@ runs:
         cd OnParDev.MyMcp.Api/ClientApp
         npx tsc --noEmit
 
-    - name: Start API server and generate API client
+    - name: Generate API client
       shell: bash
       run: |
-        # Start API server in background for OpenAPI generation
-        echo "Starting API server for OpenAPI generation..."
-        nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release > api.log 2>&1 &
-        API_PID=$!
-        echo "API PID: $API_PID"
-        
-        # Wait for API to be ready
-        echo "Waiting for API to be ready..."
-        for i in {1..30}; do
-          if curl -f http://localhost:5099/health > /dev/null 2>&1; then
-            echo "API is ready"
-            break
-          fi
-          echo "Waiting for API... (attempt $i/30)"
-          sleep 2
-        done
-        
-        # Generate API client
-        cd OnParDev.MyMcp.Api/ClientApp
-        npm run generate-api
-        
-        # For E2E tests, keep the API server running in the background
-        # Playwright will handle the frontend webServer
+        # For E2E tests, skip API server management - Playwright webServer will handle it
         if [ "${{ inputs.run-e2e }}" = "true" ]; then
-          echo "Keeping API server running for E2E tests (PID: $API_PID)"
-          echo "API_PID=$API_PID" >> $GITHUB_ENV
+          echo "Skipping API server startup - E2E tests will handle full development stack"
+          # Just pre-build the API for faster startup
+          dotnet build --configuration Release
         else
-          # Stop the API server if not running E2E tests
+          # Start API server for OpenAPI generation (non-E2E tests)
+          echo "Starting API server for OpenAPI generation..."
+          nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release > api.log 2>&1 &
+          API_PID=$!
+          echo "API PID: $API_PID"
+          
+          # Wait for API to be ready
+          echo "Waiting for API to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:5099/health > /dev/null 2>&1; then
+              echo "API is ready"
+              break
+            fi
+            echo "Waiting for API... (attempt $i/30)"
+            sleep 2
+          done
+          
+          # Generate API client
+          cd OnParDev.MyMcp.Api/ClientApp
+          npm run generate-api
+          
+          # Stop the API server
           cd ..
           echo "Stopping API server (PID: $API_PID)..."
           kill $API_PID || true
@@ -138,16 +138,6 @@ runs:
       env:
         CI: true
 
-    - name: Cleanup API server
-      if: inputs.run-e2e == 'true' && always()
-      shell: bash
-      run: |
-        if [ -n "$API_PID" ]; then
-          echo "Stopping API server (PID: $API_PID)..."
-          kill $API_PID || true
-        fi
-        pkill -f "dotnet run" || true
-        echo "API server cleanup completed"
 
     - name: Build frontend
       shell: bash

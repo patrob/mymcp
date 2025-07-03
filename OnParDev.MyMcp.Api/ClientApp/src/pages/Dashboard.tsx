@@ -1,6 +1,7 @@
 import { UserButton } from '@clerk/clerk-react'
 import { Button } from '@/components/ui/button'
 import { useServers } from '@/hooks/useServers'
+import { useConfiguration } from '@/hooks/useConfiguration'
 import { ServerCard } from '@/components/dashboard/ServerCard'
 import { ServerConnectionWizard } from '@/components/dashboard/ServerConnectionWizard'
 import { UsageMetrics } from '@/components/dashboard/UsageMetrics'
@@ -8,6 +9,7 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 
 export default function Dashboard() {
   const { data: servers, isLoading, error, refetch } = useServers()
+  const { config } = useConfiguration()
 
   const handleServerAction = (action: string, _serverId: string) => {
     if (action === 'configure') {
@@ -21,6 +23,8 @@ export default function Dashboard() {
 
   const runningServers = servers?.filter(server => server.status === 2).length || 0
   const totalServers = servers?.length || 0
+  
+  const isAuthEnabled = config?.features?.enableAuth && config?.clerk?.publishableKey
 
   if (error) {
     return (
@@ -29,7 +33,7 @@ export default function Dashboard() {
           <div className="flex h-16 items-center px-4">
             <h1 className="text-xl font-semibold">OnParDev MyMcp</h1>
             <div className="ml-auto">
-              <UserButton />
+              {isAuthEnabled && <UserButton />}
             </div>
           </div>
         </header>
@@ -57,7 +61,7 @@ export default function Dashboard() {
         <div className="flex h-16 items-center px-4">
           <h1 className="text-xl font-semibold">OnParDev MyMcp</h1>
           <div className="ml-auto">
-            <UserButton />
+            {isAuthEnabled && <UserButton />}
           </div>
         </div>
       </header>
