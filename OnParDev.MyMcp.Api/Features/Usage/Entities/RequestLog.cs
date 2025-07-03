@@ -13,7 +13,7 @@ public class RequestLog
     public int ResponseCode { get; set; }
     public long ResponseTimeMs { get; set; }
     public DateTime RequestTimestamp { get; set; }
-    
+
     // Navigation properties
     public User User { get; set; } = null!;
     public UserUsage UserUsage { get; set; } = null!;

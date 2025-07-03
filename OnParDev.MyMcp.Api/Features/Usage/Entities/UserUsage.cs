@@ -13,15 +13,15 @@ public class UserUsage
     public int RequestCount { get; set; } = 0;
     public DateTime LastUpdated { get; set; }
     public DateTime CreatedAt { get; set; }
-    
+
     // Navigation properties
     public User User { get; set; } = null!;
     public Subscription Subscription { get; set; } = null!;
     public ICollection<RequestLog> RequestLogs { get; set; } = new List<RequestLog>();
-    
+
     // Business logic
     public bool HasExceededLimit(int monthlyLimit) => RequestCount >= monthlyLimit;
-    
+
     public void IncrementRequestCount()
     {
         RequestCount++;

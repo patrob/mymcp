@@ -22,7 +22,7 @@ public class HealthCheckTests : IClassFixture<IntegrationTestWebAppFactory>
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        
+
         var content = await response.Content.ReadAsStringAsync();
         content.ShouldContain("Healthy");
     }

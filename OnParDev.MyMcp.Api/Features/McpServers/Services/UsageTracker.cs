@@ -17,10 +17,10 @@ public class UsageTracker : IUsageTracker
     {
         var now = DateTime.UtcNow;
         var userUsage = await GetOrCreateUserUsageAsync(userId, now.Year, now.Month);
-        
+
         // Server creation counts as 1 request for usage tracking
         userUsage.IncrementRequestCount();
-        
+
         var requestLog = new RequestLog
         {
             Id = Guid.NewGuid(),
@@ -42,9 +42,9 @@ public class UsageTracker : IUsageTracker
     {
         var now = DateTime.UtcNow;
         var userUsage = await GetOrCreateUserUsageAsync(userId, now.Year, now.Month);
-        
+
         userUsage.IncrementRequestCount();
-        
+
         var requestLog = new RequestLog
         {
             Id = Guid.NewGuid(),

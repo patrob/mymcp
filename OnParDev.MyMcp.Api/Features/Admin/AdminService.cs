@@ -26,7 +26,7 @@ public class AdminService : IAdminService
     {
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId);
-        
+
         return user?.Role == UserRole.Admin;
     }
 
@@ -53,7 +53,7 @@ public class AdminService : IAdminService
 
         user.Role = UserRole.Admin;
         user.UpdatedAt = DateTime.UtcNow;
-        
+
         await _context.SaveChangesAsync();
     }
 
@@ -65,7 +65,7 @@ public class AdminService : IAdminService
 
         user.Role = UserRole.User;
         user.UpdatedAt = DateTime.UtcNow;
-        
+
         await _context.SaveChangesAsync();
     }
 }

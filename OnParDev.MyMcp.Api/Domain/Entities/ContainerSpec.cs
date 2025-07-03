@@ -14,7 +14,7 @@ public class ContainerSpec
     public List<ContainerVolume> Volumes { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    
+
     public ICollection<ServerInstance> ServerInstances { get; set; } = new List<ServerInstance>();
 }
 

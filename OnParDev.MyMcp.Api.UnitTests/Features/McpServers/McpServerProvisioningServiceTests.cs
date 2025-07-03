@@ -68,8 +68,8 @@ public class McpServerProvisioningServiceTests
 
         _mockContainerOrchestrator
             .StartContainerAsync(Arg.Any<ContainerStartRequest>())
-            .Returns(Task.FromResult(new ContainerStartResult 
-            { 
+            .Returns(Task.FromResult(new ContainerStartResult
+            {
                 ContainerInstanceId = "container-123",
                 Status = ContainerStatus.Running,
                 IpAddress = "192.168.1.100",
@@ -96,7 +96,7 @@ public class McpServerProvisioningServiceTests
         var userId = _fixture.Create<Guid>();
 
         // Act & Assert
-        await Should.ThrowAsync<ArgumentException>(async () => 
+        await Should.ThrowAsync<ArgumentException>(async () =>
             await _sut.ProvisionGitHubServerAsync(userId, request));
     }
 
@@ -131,8 +131,8 @@ public class McpServerProvisioningServiceTests
 
         _mockContainerOrchestrator
             .StartContainerAsync(Arg.Any<ContainerStartRequest>())
-            .Returns(Task.FromResult(new ContainerStartResult 
-            { 
+            .Returns(Task.FromResult(new ContainerStartResult
+            {
                 ContainerInstanceId = "container-123",
                 Status = ContainerStatus.Running
             }));
@@ -176,8 +176,8 @@ public class McpServerProvisioningServiceTests
 
         _mockContainerOrchestrator
             .StartContainerAsync(Arg.Any<ContainerStartRequest>())
-            .Returns(Task.FromResult(new ContainerStartResult 
-            { 
+            .Returns(Task.FromResult(new ContainerStartResult
+            {
                 ContainerInstanceId = "container-123",
                 Status = ContainerStatus.Running
             }));
@@ -187,8 +187,8 @@ public class McpServerProvisioningServiceTests
 
         // Assert
         await _mockServerRepository.Received(1)
-            .CreateAsync(Arg.Is<ServerInstance>(s => 
-                s.UserId == userId && 
+            .CreateAsync(Arg.Is<ServerInstance>(s =>
+                s.UserId == userId &&
                 s.Name == request.Name));
     }
 
@@ -223,8 +223,8 @@ public class McpServerProvisioningServiceTests
 
         _mockContainerOrchestrator
             .StartContainerAsync(Arg.Any<ContainerStartRequest>())
-            .Returns(Task.FromResult(new ContainerStartResult 
-            { 
+            .Returns(Task.FromResult(new ContainerStartResult
+            {
                 ContainerInstanceId = "container-123",
                 Status = ContainerStatus.Failed,
                 ErrorMessage = "Container failed to start"
@@ -307,8 +307,8 @@ public class McpServerProvisioningServiceTests
 
         _mockContainerOrchestrator
             .GetContainerHealthAsync("container-123")
-            .Returns(Task.FromResult(new ContainerHealthResult 
-            { 
+            .Returns(Task.FromResult(new ContainerHealthResult
+            {
                 IsHealthy = true,
                 Status = ContainerStatus.Running,
                 LastChecked = DateTime.UtcNow
