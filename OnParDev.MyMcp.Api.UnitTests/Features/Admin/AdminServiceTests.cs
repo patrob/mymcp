@@ -32,11 +32,6 @@ public class AdminServiceTests : IDisposable
             .With(u => u.Role, UserRole.Admin)
             .Without(u => u.ServerInstances)
             .Create();
-<<<<<<< HEAD
-        
-=======
-
->>>>>>> origin/main
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -55,11 +50,6 @@ public class AdminServiceTests : IDisposable
             .With(u => u.Role, UserRole.User)
             .Without(u => u.ServerInstances)
             .Create();
-<<<<<<< HEAD
-        
-=======
-
->>>>>>> origin/main
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -95,11 +85,6 @@ public class AdminServiceTests : IDisposable
             .With(u => u.CreatedAt, DateTime.UtcNow.AddDays(-1))
             .Without(u => u.ServerInstances)
             .Create();
-<<<<<<< HEAD
-        
-=======
-
->>>>>>> origin/main
         _context.Users.AddRange(user2, user1); // Add in reverse order
         await _context.SaveChangesAsync();
 
@@ -151,11 +136,6 @@ public class AdminServiceTests : IDisposable
             .With(u => u.Role, UserRole.User)
             .Without(u => u.ServerInstances)
             .Create();
-<<<<<<< HEAD
-        
-=======
-
->>>>>>> origin/main
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -177,11 +157,6 @@ public class AdminServiceTests : IDisposable
             .With(u => u.UpdatedAt, initialUpdateTime)
             .Without(u => u.ServerInstances)
             .Create();
-<<<<<<< HEAD
-        
-=======
-
->>>>>>> origin/main
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -200,11 +175,7 @@ public class AdminServiceTests : IDisposable
         var nonExistentUserId = _fixture.Create<Guid>();
 
         // Act & Assert
-<<<<<<< HEAD
-        await Should.ThrowAsync<InvalidOperationException>(async () => 
-=======
         await Should.ThrowAsync<InvalidOperationException>(async () =>
->>>>>>> origin/main
             await _sut.PromoteUserToAdminAsync(nonExistentUserId));
     }
 
@@ -216,11 +187,6 @@ public class AdminServiceTests : IDisposable
             .With(u => u.Role, UserRole.Admin)
             .Without(u => u.ServerInstances)
             .Create();
-<<<<<<< HEAD
-        
-=======
-
->>>>>>> origin/main
         _context.Users.Add(admin);
         await _context.SaveChangesAsync();
 
@@ -239,11 +205,7 @@ public class AdminServiceTests : IDisposable
         var nonExistentUserId = _fixture.Create<Guid>();
 
         // Act & Assert
-<<<<<<< HEAD
-        await Should.ThrowAsync<InvalidOperationException>(async () => 
-=======
         await Should.ThrowAsync<InvalidOperationException>(async () =>
->>>>>>> origin/main
             await _sut.DemoteUserToRegularAsync(nonExistentUserId));
     }
 

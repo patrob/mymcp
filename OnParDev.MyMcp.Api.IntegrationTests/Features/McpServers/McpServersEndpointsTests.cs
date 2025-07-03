@@ -28,11 +28,7 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
     public async Task CreateGitHubServer_WithValidRequest_ShouldReturnCreatedServer()
     {
         // Arrange
-<<<<<<< HEAD
-        var user = await CreateTestUserWithSubscriptionAsync();
-=======
         await CreateTestUserWithSubscriptionAsync();
->>>>>>> origin/main
         var request = new CreateGitHubServerRequest
         {
             Name = "Test GitHub Server",
@@ -49,10 +45,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
-<<<<<<< HEAD
-        
-=======
->>>>>>> origin/main
         var serverDto = await response.Content.ReadFromJsonAsync<ServerInstanceDto>();
         serverDto.ShouldNotBeNull();
         serverDto.Name.ShouldBe(request.Name);
@@ -92,10 +84,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-<<<<<<< HEAD
-        
-=======
->>>>>>> origin/main
         var servers = await response.Content.ReadFromJsonAsync<List<ServerInstanceDto>>();
         servers.ShouldNotBeNull();
         servers!.Count.ShouldBe(1);
@@ -115,10 +103,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-<<<<<<< HEAD
-        
-=======
->>>>>>> origin/main
         var serverDto = await response.Content.ReadFromJsonAsync<ServerInstanceDto>();
         serverDto.ShouldNotBeNull();
         serverDto!.Id.ShouldBe(server.Id);
@@ -150,10 +134,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-<<<<<<< HEAD
-        
-=======
->>>>>>> origin/main
         var serverDto = await response.Content.ReadFromJsonAsync<ServerInstanceDto>();
         serverDto.ShouldNotBeNull();
         serverDto!.Status.ShouldBe(ServerStatus.Stopped);
@@ -189,10 +169,6 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-<<<<<<< HEAD
-        
-=======
->>>>>>> origin/main
         var health = await response.Content.ReadFromJsonAsync<ServerHealthResponse>();
         health.ShouldNotBeNull();
         health!.IsHealthy.ShouldBeTrue();
@@ -209,19 +185,10 @@ public class McpServersEndpointsTests : IClassFixture<IntegrationTestWebAppFacto
 
         // Use the same ClerkUserId that TestAuthService returns
         const string testClerkUserId = "test-user-id";
-<<<<<<< HEAD
-        
-        // Check if user already exists
-        var existingUser = await context.Users
-            .FirstOrDefaultAsync(u => u.ClerkUserId == testClerkUserId);
-            
-=======
 
         // Check if user already exists
         var existingUser = await context.Users
             .FirstOrDefaultAsync(u => u.ClerkUserId == testClerkUserId);
-
->>>>>>> origin/main
         if (existingUser != null)
             return existingUser;
 
