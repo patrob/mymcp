@@ -327,13 +327,19 @@ jobs:
           const statusIcon = coveragePassed ? '✅' : '❌';
           const threshold = '10%';
           
+          const tableHeader = '| Type | Coverage |';
+          const tableSeparator = '|------|----------|';
+          const backendRow = `| Backend | ${backendCoverage}% |`;
+          const frontendRow = `| Frontend | ${frontendCoverage}% |`;
+          const combinedRow = `| **Combined** | **${combinedCoverage}%** |`;
+          
           const comment = `## 📊 Code Coverage Report
 
-| Type | Coverage |
-|------|----------|
-| Backend | ${backendCoverage}% |
-| Frontend | ${frontendCoverage}% |
-| **Combined** | **${combinedCoverage}%** |
+${tableHeader}
+${tableSeparator}
+${backendRow}
+${frontendRow}
+${combinedRow}
 
 ${statusIcon} Coverage ${coveragePassed ? 'meets' : 'below'} minimum requirement (${threshold})
 
