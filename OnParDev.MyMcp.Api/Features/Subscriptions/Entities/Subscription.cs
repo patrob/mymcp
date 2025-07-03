@@ -23,20 +23,20 @@ public class Subscription
     public string? StripeSubscriptionId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    
+
     // Navigation properties
     public User User { get; set; } = null!;
     public Plan Plan { get; set; } = null!;
     public ICollection<UserUsage> UsageRecords { get; set; } = new List<UserUsage>();
-    
+
     // Business logic methods
-    public bool IsActive => Status == SubscriptionStatus.Active && 
-                           StartDate <= DateTime.UtcNow && 
+    public bool IsActive => Status == SubscriptionStatus.Active &&
+                           StartDate <= DateTime.UtcNow &&
                            (EndDate == null || EndDate > DateTime.UtcNow);
-    
-    public bool CanMakeRequest(int currentMonthlyRequests) => 
+
+    public bool CanMakeRequest(int currentMonthlyRequests) =>
         IsActive && Plan.GetPlanType().CanMakeRequest(currentMonthlyRequests);
-    
-    public bool CanCreateServer(int currentServerCount) => 
+
+    public bool CanCreateServer(int currentServerCount) =>
         IsActive && Plan.GetPlanType().CanCreateServer(currentServerCount);
 }

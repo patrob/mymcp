@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "generate-api": "npx openapi-typescript-codegen --input http://localhost:5099/openapi/v1.json --output ./src/api --client fetch"
+    "generate-api": "npx openapi-typescript-codegen --input http://localhost:5099/openapi/v1.json --output ./src/api --client fetch",
+    "prepare": "husky"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.29.1",
@@ -65,7 +66,9 @@
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.12.0",
     "http-proxy-middleware": "^2.0.6",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
+    "lint-staged": "^16.1.2",
     "openapi-typescript": "^7.4.2",
     "openapi-typescript-codegen": "^0.29.0",
     "postcss": "^8.4.49",

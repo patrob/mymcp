@@ -10,10 +10,10 @@ public class Plan
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    
+
     // Navigation properties
     public ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
-    
+
     // Factory method to get the plan type instance
     public PlanType GetPlanType() => PlanTypeName switch
     {
@@ -22,7 +22,7 @@ public class Plan
         PlanTypeName.Team => new TeamPlanType(),
         _ => throw new InvalidOperationException($"Unknown plan type: {PlanTypeName}")
     };
-    
+
     // Convenience properties that delegate to PlanType
     public string Name => GetPlanType().Name;
     public string Description => GetPlanType().Description;

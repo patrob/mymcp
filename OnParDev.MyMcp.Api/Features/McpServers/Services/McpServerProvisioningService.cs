@@ -44,10 +44,10 @@ public class McpServerProvisioningService : IMcpServerProvisioningService
         };
 
         var template = GitHubMcpServerTemplate.Create();
-        
+
         // Ensure the template exists in the database
         var existingTemplate = await _templateRepository.GetByNameAndVersionAsync(template.Name, template.Version);
-            
+
         if (existingTemplate == null)
         {
             template = await _templateRepository.CreateAsync(template);
@@ -56,7 +56,7 @@ public class McpServerProvisioningService : IMcpServerProvisioningService
         {
             template = existingTemplate;
         }
-        
+
         var serverId = Guid.NewGuid();
 
         var containerRequest = new ContainerStartRequest(
@@ -116,7 +116,7 @@ public class McpServerProvisioningService : IMcpServerProvisioningService
             return false;
 
         var result = await _containerOrchestrator.StopContainerAsync(serverInstance.ContainerInstanceId);
-        
+
         if (result.Success)
         {
             serverInstance.Status = ServerStatus.Stopped;

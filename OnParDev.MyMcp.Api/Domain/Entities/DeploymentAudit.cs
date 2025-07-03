@@ -10,6 +10,6 @@ public class DeploymentAudit
     public Dictionary<string, object>? Details { get; set; }
     public DateTime CreatedAt { get; set; }
     public TimeSpan? Duration { get; set; }
-    
+
     public ServerInstance ServerInstance { get; set; } = null!;
 }

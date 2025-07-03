@@ -9,6 +9,6 @@ public class ServerLog
     public string? Source { get; set; }
     public Dictionary<string, object>? Metadata { get; set; }
     public DateTime Timestamp { get; set; }
-    
+
     public ServerInstance ServerInstance { get; set; } = null!;
 }

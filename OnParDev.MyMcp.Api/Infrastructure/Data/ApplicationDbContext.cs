@@ -19,15 +19,15 @@ public class ApplicationDbContext : DbContext
     public DbSet<McpServerTemplate> McpServerTemplates { get; set; }
     public DbSet<ServerLog> ServerLogs { get; set; }
     public DbSet<DeploymentAudit> DeploymentAudits { get; set; }
-    
+
     // Subscription feature entities
     public DbSet<Plan> Plans { get; set; }
     public DbSet<Subscription> Subscriptions { get; set; }
-    
+
     // Usage tracking entities
     public DbSet<UserUsage> UserUsages { get; set; }
     public DbSet<RequestLog> RequestLogs { get; set; }
-    
+
     // Configuration entities
     public DbSet<ConfigurationSetting> ConfigurationSettings { get; set; }
 

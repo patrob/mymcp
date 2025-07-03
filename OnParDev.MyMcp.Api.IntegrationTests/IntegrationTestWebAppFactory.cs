@@ -29,10 +29,10 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsy
     public new HttpClient CreateClient()
     {
         var client = base.CreateClient();
-        
+
         // Add test authentication header
         client.DefaultRequestHeaders.Add("Authorization", "Bearer test-token");
-        
+
         return client;
     }
 
@@ -72,11 +72,11 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsy
                 options.DefaultPolicy = new AuthorizationPolicyBuilder()
                     .RequireAssertion(_ => true)
                     .Build();
-                
+
                 // Replace the authorization service with one that always allows
                 options.InvokeHandlersAfterFailure = false;
             });
-            
+
             // Replace the authorization service to always allow
             services.AddSingleton<IAuthorizationService, AlwaysAllowAuthorizationService>();
         });
@@ -171,7 +171,7 @@ public class TestAuthService : IAuthService
     {
         // For integration tests, always return the test user
         var testUser = await GetUserByClerkIdAsync("test-user-id");
-        
+
         // If user doesn't exist, create one on the fly
         if (testUser == null)
         {
@@ -189,7 +189,7 @@ public class TestAuthService : IAuthService
             _context.Users.Add(testUser);
             await _context.SaveChangesAsync();
         }
-        
+
         return testUser;
     }
 }

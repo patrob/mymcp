@@ -14,7 +14,7 @@ public class McpServerTemplate
     public bool IsOfficial { get; set; } = false;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    
+
     public ICollection<ServerInstance> ServerInstances { get; set; } = new List<ServerInstance>();
 }
 

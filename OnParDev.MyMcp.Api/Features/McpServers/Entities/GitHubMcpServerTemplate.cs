@@ -35,7 +35,7 @@ public static class GitHubMcpServerTemplate
             },
             new()
             {
-                Name = "Issue Management", 
+                Name = "Issue Management",
                 Description = "Create, read, update issues and comments",
                 IsRequired = false
             },

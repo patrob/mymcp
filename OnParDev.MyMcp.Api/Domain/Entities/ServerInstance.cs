@@ -14,7 +14,7 @@ public class ServerInstance
     public DateTime UpdatedAt { get; set; }
     public DateTime? LastStartedAt { get; set; }
     public DateTime? LastStoppedAt { get; set; }
-    
+
     public User User { get; set; } = null!;
     public McpServerTemplate McpServerTemplate { get; set; } = null!;
     public ContainerSpec ContainerSpec { get; set; } = null!;

@@ -61,7 +61,7 @@ public static class ServersEndpoints
     {
         var user = await authService.GetOrCreateUserAsync(context.User);
         var server = await serversService.GetServerByIdAsync(serverId, user.Id);
-        
+
         if (server == null)
             return Results.NotFound();
 
@@ -100,7 +100,7 @@ public static class ServersEndpoints
     {
         var user = await authService.GetOrCreateUserAsync(context.User);
         var server = await serversService.UpdateServerAsync(serverId, dto, user.Id);
-        
+
         if (server == null)
             return Results.NotFound();
 
@@ -117,7 +117,7 @@ public static class ServersEndpoints
         {
             var user = await authService.GetOrCreateUserAsync(context.User);
             var deleted = await serversService.DeleteServerAsync(serverId, user.Id);
-            
+
             if (!deleted)
                 return Results.NotFound();
 
@@ -139,7 +139,7 @@ public static class ServersEndpoints
         {
             var user = await authService.GetOrCreateUserAsync(context.User);
             var started = await serversService.StartServerAsync(serverId, user.Id);
-            
+
             if (!started)
                 return Results.NotFound();
 
@@ -161,7 +161,7 @@ public static class ServersEndpoints
         {
             var user = await authService.GetOrCreateUserAsync(context.User);
             var stopped = await serversService.StopServerAsync(serverId, user.Id);
-            
+
             if (!stopped)
                 return Results.NotFound();
 

@@ -19,7 +19,7 @@ public class ConfigurationSetting
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    
+
     // Helper methods for type-safe value retrieval
     public int GetIntValue() => int.Parse(Value);
     public bool GetBoolValue() => bool.Parse(Value);
