@@ -1,3 +1,4 @@
+// Test comment for dotnet format
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using Scalar.AspNetCore;
@@ -92,12 +93,12 @@ app.Use(async (context, next) =>
               "img-src 'self' data: https://*.clerk.accounts.dev https://*.accounts.dev; " +
               "font-src 'self' data:; " +
               "frame-src https://*.clerk.accounts.dev https://*.accounts.dev";
-    
+
     context.Response.Headers.Append("Content-Security-Policy", csp);
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
     context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
-    
+
     await next();
 });
 
