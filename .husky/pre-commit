@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Pre-commit hook to run linting and formatting on staged files
+
+echo "🚀 Running pre-commit hooks..."
+
+# Run dotnet format on staged C# files
+echo "📝 Formatting C# files..."
+./scripts/lint-staged-dotnet.sh
+
+# Run lint-staged for frontend files
+echo "🎨 Linting frontend files..."
+cd OnParDev.MyMcp.Api/ClientApp && npx lint-staged
+
+echo "✅ Pre-commit hooks completed successfully!"
