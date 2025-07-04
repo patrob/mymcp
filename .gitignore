@@ -57,6 +57,9 @@ wwwroot/
 test-results/
 playwright-report/
 
+# Local secrets for act
+.secrets
+
 # Misc
 .DS_Store
 Thumbs.db

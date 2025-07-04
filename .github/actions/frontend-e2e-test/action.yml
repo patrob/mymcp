@@ -55,6 +55,45 @@ runs:
         cd OnParDev.MyMcp.Api/ClientApp
         npx playwright install --with-deps chromium
 
+    - name: Start API server for E2E tests
+      shell: bash
+      run: |
+        # Start the API server in background for OpenAPI generation and E2E tests
+        echo "Starting API server for E2E tests..."
+        nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release --urls "http://0.0.0.0:5099" > api-e2e.log 2>&1 &
+        API_PID=$!
+        echo "API PID: $API_PID"
+        echo $API_PID > api.pid
+        
+        # Wait for API to be ready
+        echo "Waiting for API to be ready..."
+        for i in {1..30}; do
+          if curl -f http://localhost:5099/health > /dev/null 2>&1; then
+            echo "API is ready for E2E tests"
+            break
+          fi
+          echo "Waiting for API... (attempt $i/30)"
+          sleep 2
+        done
+        
+        if [ $i -eq 30 ]; then
+          echo "API failed to start within timeout"
+          echo "=== API Log ==="
+          cat api-e2e.log || echo "No API log available"
+          echo "=== End API Log ==="
+          exit 1
+        fi
+      env:
+        CLERK__PUBLISHABLEKEY: ${{ env.CLERK_PUBLISHABLE_KEY }}
+        CLERK__AUTHORITY: ${{ env.CLERK_AUTHORITY }}
+
+    - name: Generate API client for E2E tests
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        echo "Generating API client..."
+        npm run generate-api
+
     - name: Run E2E tests
       shell: bash
       run: |
@@ -65,6 +104,21 @@ runs:
         CI: true
         CLERK__PUBLISHABLEKEY: ${{ env.CLERK_PUBLISHABLE_KEY }}
         CLERK__AUTHORITY: ${{ env.CLERK_AUTHORITY }}
+
+    - name: Cleanup API server
+      shell: bash
+      run: |
+        # Stop the API server
+        if [ -f api.pid ]; then
+          API_PID=$(cat api.pid)
+          echo "Stopping API server (PID: $API_PID)..."
+          kill $API_PID || true
+          rm -f api.pid api.port
+        fi
+        # Cleanup any remaining dotnet processes
+        pkill -f "dotnet run" || true
+        echo "API server stopped"
+      if: always()
 
     - name: Upload E2E test results
       if: failure()

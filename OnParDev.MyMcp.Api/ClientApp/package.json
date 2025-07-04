@@ -8,6 +8,7 @@
     "start": "rimraf ./dist && vite --port 5173",
     "predev": "node aspnetcore-https.cjs && node aspnetcore-react.cjs && npm run generate-api",
     "dev": "rimraf ./dist && vite --port 5173",
+    "dev:e2e": "rimraf ./dist && vite --port 5173",
     "build": "npm run generate-api && tsc -b && vite build",
     "build:docker": "tsc -b && vite build",
     "lint": "eslint .",
