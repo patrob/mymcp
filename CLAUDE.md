@@ -1,6 +1,8 @@
-# Claude AI Agent Development Instructions
+# Development Partnership
 
-This file contains specific instructions for AI agents working on the OnParDev MyMcp project.
+We're building production-quality code together. Your role is to create maintainable, efficient solutions while catching potential issues early.
+
+When you seem stuck or overly complex, I'll redirect you - my guidance helps you stay on track.
 
 ## Project Overview
 
@@ -11,216 +13,194 @@ This is a full-stack TypeScript + .NET 9 application for managing MCP (Model Con
 - **Authentication**: Clerk (optional, feature-flagged)
 - **Development**: SPA Proxy pattern, OpenAPI code generation
 
-## Critical Development Guidelines
+## 🚨 AUTOMATED CHECKS ARE MANDATORY
 
-### Code Standards Compliance
+**ALL hook issues are BLOCKING - EVERYTHING must be ✅ GREEN!**  
+No errors. No formatting issues. No linting problems. Zero tolerance.  
+These are not suggestions. Fix ALL issues before continuing.
 
-ALL code must comply with standards defined in `DEVELOPMENT.md`:
+## CRITICAL WORKFLOW - ALWAYS FOLLOW THIS!
 
-- **Methods ≤ 10 lines** (including test methods)
-- **Classes ≤ 7 public members**
-- **Methods ≤ 3 parameters**
-- **No duplication** in code or tests
-- **Arrange, Act, Assert** pattern for all tests
-- **≤ 3 assertions per test method**
+### Research → Plan → Implement
 
-### Architecture Patterns
+**NEVER JUMP STRAIGHT TO CODING!** Always follow this sequence:
 
-#### Backend (.NET)
+1. **Research**: Explore the codebase, understand existing patterns
+2. **Plan**: Create a detailed implementation plan and verify it with me
+3. **Implement**: Execute the plan with validation checkpoints
 
-- **Vertical Slice Architecture** - features in `/Features/{FeatureName}/`
-- **Minimal APIs** - avoid controllers, use `MapGroup()` extensions
-- **Domain-Driven Design** - entities in `/Domain/Entities/`
-- **Configuration classes** - use strongly-typed classes, no anonymous types
-- **User Secrets** for local development, GitHub Secrets for CI/CD
+When asked to implement any feature, you'll first say: "Let me research the codebase and create a plan before implementing."
 
-#### Frontend (React)
+For complex architectural decisions or challenging problems, use **"ultrathink"** to engage maximum reasoning capacity. Say: "Let me ultrathink about this architecture before proposing a solution."
 
-- **Backend-driven configuration** - all config from `/api/v1/config` endpoint
-- **Generated TypeScript clients** - run `npm run generate-api` after backend changes
-- **Feature flags** - dynamic enablement based on available configuration
-- **Conditional rendering** - check feature flags before showing UI components
+### USE MULTIPLE AGENTS!
 
-### Testing Requirements
+_Leverage subagents aggressively_ for better results:
 
-#### Unit Tests (.NET)
+- Spawn agents to explore different parts of the codebase in parallel
+- Use one agent to write tests while another implements features
+- Delegate research tasks: "I'll have an agent investigate the database schema while I analyze the API structure"
+- For complex refactors: One agent identifies changes, another implements them
 
-- Use **xUnit**, **AutoFixture**, **NSubstitute**
-- Test classes in `/OnParDev.MyMcp.Api.UnitTests/`
-- Follow AAA pattern strictly
+Say: "I'll spawn agents to tackle different aspects of this problem" whenever a task has multiple independent parts.
 
-#### Integration Tests (.NET)
+### Reality Checkpoints
 
-- Use **Testcontainers** for PostgreSQL
-- Test classes in `/OnParDev.MyMcp.Api.IntegrationTests/`
-- Test full API endpoints end-to-end
+**Stop and validate** at these moments:
 
-#### Frontend Tests (React)
+- After implementing a complete feature
+- Before starting a new major component
+- When something feels wrong
+- Before declaring "done"
+- **WHEN HOOKS FAIL WITH ERRORS** ❌
 
-- Use **Vitest**, **React Testing Library**, **@testing-library/jest-dom**
-- Mock external dependencies (Clerk, API calls)
-- Test component behavior, not implementation details
-- Use `createMockConfig()` helper for configuration mocking
+Run: `make fmt && make test && make lint`
 
-### Development Workflow
+> Why: You can lose track of what's actually working. These checkpoints prevent cascading failures.
 
-#### Making Backend Changes
+### 🚨 CRITICAL: Hook Failures Are BLOCKING
 
-1. Create feature in `/Features/{FeatureName}/`
-2. Add entities to `/Domain/Entities/` if needed
-3. Update `Program.cs` for DI and endpoint mapping
-4. Generate OpenAPI types: `npm run generate-api`
-5. Write unit and integration tests
-6. Run `dotnet test` and `npm test`
+**When hooks report ANY issues (exit code 2), you MUST:**
 
-#### Making Frontend Changes
+1. **STOP IMMEDIATELY** - Do not continue with other tasks
+2. **FIX ALL ISSUES** - Address every ❌ issue until everything is ✅ GREEN
+3. **VERIFY THE FIX** - Re-run the failed command to confirm it's fixed
+4. **CONTINUE ORIGINAL TASK** - Return to what you were doing before the interrupt
+5. **NEVER IGNORE** - There are NO warnings, only requirements
 
-1. Check feature flags before adding UI components
-2. Use generated API client types
-3. Mock dependencies in tests
-4. Follow AAA pattern in all tests
-5. Ensure responsive design with Tailwind CSS
+This includes:
 
-#### Authentication Integration
+- Formatting issues (gofmt, black, prettier, etc.)
+- Linting violations (golangci-lint, eslint, etc.)
+- Forbidden patterns (time.Sleep, panic(), interface{})
+- ALL other checks
 
-- Check `config?.features?.enableAuth && config?.clerk?.publishableKey`
-- Wrap components in `<ClerkProvider>` when auth enabled
-- Use `<SignedIn>`, `<SignedOut>`, `<SignInButton>`, `<UserButton>` appropriately
-- Test both authenticated and unauthenticated states
+Your code must be 100% clean. No exceptions.
 
-### Secret Management
+**Recovery Protocol:**
 
-#### Local Development
+- When interrupted by a hook failure, maintain awareness of your original task
+- After fixing all issues and verifying the fix, continue where you left off
+- Use the todo list to track both the fix and your original task
 
-```bash
-cd OnParDev.MyMcp.Api
-dotnet user-secrets set "SectionName:KeyName" "value"
-```
+## Working Memory Management
 
-#### CI/CD Setup
+### When context gets long:
 
-```bash
-gh secret set SECTION_KEYNAME --body "value"
-```
+- Re-read this CLAUDE.md file
+- Summarize progress in a PROGRESS.md file
+- Document current state before major changes
 
-#### Configuration Structure
-
-- **appsettings.json**: Empty placeholders only
-- **User Secrets**: Actual values for local development
-- **GitHub Secrets**: Actual values for CI/CD
-- **Environment Variables**: Runtime override capability
-
-### Common Patterns
-
-#### Configuration Endpoint Pattern
-
-```csharp
-app.MapGet("/api/v1/config", () => new ConfigurationResponse
-{
-    Clerk = new ClerkConfiguration { /* ... */ },
-    Api = new ApiConfiguration { /* ... */ },
-    Features = new FeatureConfiguration { /* ... */ }
-});
-```
-
-#### Feature Flag Pattern (React)
-
-```typescript
-{
-  config?.features?.enableAuth && config?.clerk?.publishableKey ? (
-    <AuthComponent />
-  ) : (
-    <NonAuthComponent />
-  );
-}
-```
-
-#### Test Helper Pattern
-
-```typescript
-const createMockConfig = (overrides = {}) => ({
-  clerk: { publishableKey: "", authority: "", afterSignOutUrl: "/" },
-  api: { baseUrl: "http://localhost:5099", version: "v1" },
-  features: { enableAuth: false, enableAnalytics: false },
-  ...overrides,
-});
-```
-
-## Project-Specific Context
-
-### Current Features
-
-- **Landing Page**: Public homepage with features
-- **Dashboard**: Protected area (auth-gated when enabled)
-- **Configuration API**: Backend-driven frontend configuration
-- **Authentication**: Optional Clerk integration via feature flags
-
-### Technology Stack
-
-- **.NET 9**: Latest LTS version
-- **React 18**: With Concurrent Features
-- **TypeScript 5.6**: Strict mode enabled
-- **Tailwind CSS**: Utility-first styling
-- **shadcn/ui**: High-quality React components
-- **Vite**: Fast build tool and dev server
-- **Vitest**: Fast unit test runner
-
-### File Structure Conventions
+### Maintain TODO.md:
 
 ```
-OnParDev.MyMcp.Api/
-├── Features/{FeatureName}/               # Vertical slices (includes models, DTOs, etc)
-├── Features/{FeatureName}/Endpoints.cs   # Endpoints for feature
-├── Features/{FeatureName}/Feature.cs     # Dependency Injection logic
-├── Data/                                 # EF Core DbContext
-├── ClientApp/                            # React frontend
-│   ├── src/
-│   │   ├── components/                   # Reusable components
-│   │   ├── pages/                        # Route components
-│   │   ├── contexts/                     # React contexts
-│   │   └── api/                          # Generated API client
-│   └── vitest.config.ts                  # Test configuration
-└── Program.cs                            # Application entry point
+## Current Task
+- [ ] What we're doing RIGHT NOW
+
+## Completed
+- [x] What's actually done and tested
+
+## Next Steps
+- [ ] What comes next
 ```
 
-### Performance Considerations
+## Go-Specific Rules
 
-- **SPA Proxy**: Eliminates CORS issues in development
-- **Code Splitting**: Lazy load routes and components
-- **API Optimization**: Use React Query for caching
-- **Bundle Size**: Monitor with `npm run build`
+### FORBIDDEN - NEVER DO THESE:
 
-### Security Best Practices
+- **NO interface{}** or **any{}** - use concrete types!
+- **NO time.Sleep()** or busy waits - use channels for synchronization!
+- **NO** keeping old and new code together
+- **NO** migration functions or compatibility layers
+- **NO** versioned function names (processV2, handleNew)
+- **NO** custom error struct hierarchies
+- **NO** TODOs in final code
 
-- **No secrets in source control**: Use user-secrets and GitHub secrets
-- **HTTPS in development**: SPA proxy handles certificates
-- **JWT validation**: Clerk handles token verification
-- **CORS configuration**: Separate policies for dev/prod
+> **AUTOMATED ENFORCEMENT**: The smart-lint hook will BLOCK commits that violate these rules.  
+> When you see `❌ FORBIDDEN PATTERN`, you MUST fix it immediately!
 
-## Agent Behavior Guidelines
+### Required Standards:
 
-### When to Use Tools
+- **Delete** old code when replacing it
+- **Meaningful names**: `userID` not `id`
+- **Early returns** to reduce nesting
+- **Concrete types** from constructors: `func NewServer() *Server`
+- **Simple errors**: `return fmt.Errorf("context: %w", err)`
+- **Table-driven tests** for complex logic
+- **Channels for synchronization**: Use channels to signal readiness, not sleep
+- **Select for timeouts**: Use `select` with timeout channels, not sleep loops
 
-- **Read files** before making changes to understand context
-- **Search extensively** using Grep/Glob for patterns
-- **Generate API types** after backend changes
-- **Run tests** after making changes
-- **Update documentation** when adding new features
+## Implementation Standards
 
-### Code Generation Approach
+### Our code is complete when:
 
-- **Follow existing patterns** rather than inventing new ones
-- **Maintain consistency** with established conventions
-- **Test new code** thoroughly before considering it complete
-- **Update related documentation** when making changes
+- ? All linters pass with zero issues
+- ? All tests pass
+- ? Feature works end-to-end
+- ? Old code is deleted
+- ? Godoc on all exported symbols
 
-### Problem-Solving Strategy
+### Testing Strategy
 
-1. **Understand the requirement** fully before coding
-2. **Search existing code** for similar patterns
-3. **Plan the implementation** considering standards compliance
-4. **Implement incrementally** with tests for each step
-5. **Verify functionality** with comprehensive testing
-6. **Update documentation** to reflect changes
+- Complex business logic ? Write tests first
+- Simple CRUD ? Write tests after
+- Hot paths ? Add benchmarks
+- Skip tests for main() and simple CLI parsing
 
-Remember: Quality over speed. Follow the established patterns and standards strictly.
+### Project Structure
+
+```
+cmd/        # Application entrypoints
+internal/   # Private code (the majority goes here)
+pkg/        # Public libraries (only if truly reusable)
+```
+
+## Problem-Solving Together
+
+When you're stuck or confused:
+
+1. **Stop** - Don't spiral into complex solutions
+2. **Delegate** - Consider spawning agents for parallel investigation
+3. **Ultrathink** - For complex problems, say "I need to ultrathink through this challenge" to engage deeper reasoning
+4. **Step back** - Re-read the requirements
+5. **Simplify** - The simple solution is usually correct
+6. **Ask** - "I see two approaches: [A] vs [B]. Which do you prefer?"
+
+My insights on better approaches are valued - please ask for them!
+
+## Performance & Security
+
+### **Measure First**:
+
+- No premature optimization
+- Benchmark before claiming something is faster
+- Use pprof for real bottlenecks
+
+### **Security Always**:
+
+- Validate all inputs
+- Use crypto/rand for randomness
+- Prepared statements for SQL (never concatenate!)
+
+## Communication Protocol
+
+### Progress Updates:
+
+```
+✓ Implemented authentication (all tests passing)
+✓ Added rate limiting
+✗ Found issue with token expiration - investigating
+```
+
+### Suggesting Improvements:
+
+"The current approach works, but I notice [observation].
+Would you like me to [specific improvement]?"
+
+## Working Together
+
+- This is always a feature branch - no backwards compatibility needed
+- When in doubt, we choose clarity over cleverness
+- **REMINDER**: If this file hasn't been referenced in 30+ minutes, RE-READ IT!
+
+Avoid complex abstractions or "clever" code. The simple, obvious solution is probably better, and my guidance helps you stay focused on what matters.
