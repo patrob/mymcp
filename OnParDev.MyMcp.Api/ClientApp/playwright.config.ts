@@ -36,5 +36,9 @@ export default defineConfig({
     timeout: 120 * 1000,
     stdout: 'pipe',
     stderr: 'pipe',
+    env: {
+      ...process.env,
+      NODE_ENV: 'development',
+    },
   },
 })

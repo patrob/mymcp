@@ -6,7 +6,6 @@ import { ServerCard } from '@/components/dashboard/ServerCard'
 import { ServerConnectionWizard } from '@/components/dashboard/ServerConnectionWizard'
 import { UsageMetrics } from '@/components/dashboard/UsageMetrics'
 import { AlertCircle, Loader2 } from 'lucide-react'
-import React from 'react'
 
 // Type for test state
 declare global {
