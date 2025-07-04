@@ -14,9 +14,6 @@
     "preview": "vite preview",
     "test": "vitest --run",
     "test:coverage": "vitest --run --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:report": "playwright show-report",
     "generate-api": "npx openapi-typescript-codegen --input http://localhost:5099/openapi/v1.json --output ./src/api --client fetch",
     "prepare": "husky"
   },
@@ -51,7 +48,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
-    "@playwright/test": "^1.53.2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
