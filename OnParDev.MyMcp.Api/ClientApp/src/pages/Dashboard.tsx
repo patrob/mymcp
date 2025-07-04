@@ -6,7 +6,7 @@ import { ServerCard } from '@/components/dashboard/ServerCard'
 import { ServerConnectionWizard } from '@/components/dashboard/ServerConnectionWizard'
 import { UsageMetrics } from '@/components/dashboard/UsageMetrics'
 import { AlertCircle, Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import React from 'react'
 
 // Type for test state
 declare global {
@@ -26,14 +26,11 @@ declare global {
 export default function Dashboard() {
   const { data: servers, isLoading, error, refetch } = useServers()
   const { config } = useConfiguration()
-  const [testState, setTestState] = useState<typeof window.__CLERK_TEST_STATE | null>(null)
   
-  // Check for test mode
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.__CLERK_MOCK_MODE) {
-      setTestState(window.__CLERK_TEST_STATE || null)
-    }
-  }, [])
+  // Immediately check for test state on every render
+  const testState = typeof window !== 'undefined' && window.__CLERK_MOCK_MODE 
+    ? window.__CLERK_TEST_STATE || null 
+    : null
 
   const handleServerAction = (action: string, _serverId: string) => {
     if (action === 'configure') {

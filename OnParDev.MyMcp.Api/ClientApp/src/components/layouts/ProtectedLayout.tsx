@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode } from 'react'
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react'
 import { useConfiguration } from '@/hooks/useConfiguration'
 
@@ -23,14 +23,11 @@ interface ProtectedLayoutProps {
 
 export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const { config, isLoading, error } = useConfiguration()
-  const [testState, setTestState] = useState<typeof window.__CLERK_TEST_STATE | null>(null)
   
-  // Check for test mode
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.__CLERK_MOCK_MODE) {
-      setTestState(window.__CLERK_TEST_STATE || null)
-    }
-  }, [])
+  // Immediately check for test state on every render
+  const testState = typeof window !== 'undefined' && window.__CLERK_MOCK_MODE 
+    ? window.__CLERK_TEST_STATE || null 
+    : null
 
   if (isLoading) {
     return (

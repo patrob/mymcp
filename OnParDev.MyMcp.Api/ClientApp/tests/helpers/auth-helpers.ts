@@ -144,6 +144,9 @@ async function mockClerkComponents(page: Page, isSignedIn: boolean) {
     
     // Override Clerk components behavior in test environment
     window.__CLERK_MOCK_MODE = true
+    
+    // Force immediate state synchronization for components
+    window.__CLERK_STATE_READY = true
   }, isSignedIn, TEST_ENV_FLAG)
 }
 
@@ -286,53 +289,6 @@ async function mockClerkSignedOutState(page: Page) {
   })
 }
 
-/**
- * Simulates signing in during a test
- */
-export async function signInDuringTest(page: Page, user: {
-  userId?: string
-  userEmail?: string
-} = {}) {
-  const userData = {
-    userId: user.userId || 'user_test123',
-    userEmail: user.userEmail || 'test@example.com',
-  }
-  
-  // Update the test state
-  await page.evaluate((newUser) => {
-    window.__CLERK_TEST_STATE = {
-      isSignedIn: true,
-      isLoaded: true,
-      user: {
-        id: newUser.userId,
-        primaryEmailAddress: { emailAddress: newUser.userEmail }
-      }
-    }
-  }, userData)
-  
-  // Re-setup mocking for new state
-  await mockServersEndpoints(page)
-  
-  // Trigger re-render by reloading
-  await page.reload()
-}
-
-/**
- * Simulates signing out during a test
- */
-export async function signOutDuringTest(page: Page) {
-  // Update the test state
-  await page.evaluate(() => {
-    window.__CLERK_TEST_STATE = {
-      isSignedIn: false,
-      isLoaded: true,
-      user: null
-    }
-  })
-  
-  // Re-setup mocking for new state  
-  await mockServersEndpoints(page)
-  
-  // Trigger re-render by reloading
-  await page.reload()
-}
+// Note: signInDuringTest and signOutDuringTest functions removed
+// These were used for dynamic authentication state changes during tests
+// which proved unreliable. Static authentication testing is preferred.

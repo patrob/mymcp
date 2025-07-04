@@ -71,11 +71,8 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             // Production mode - use real Clerk components
             <>
               <SignedOut>
-                <SignInButton mode="modal">
-                  <button 
-                    data-testid="sign-in-button"
-                    className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
-                  >
+                <SignInButton mode="modal" data-testid="sign-in-button">
+                  <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
                     Sign In
                   </button>
                 </SignInButton>

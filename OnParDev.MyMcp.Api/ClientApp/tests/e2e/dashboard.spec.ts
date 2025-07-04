@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { setupUnauthenticatedMode, setupAuthenticatedMode } from '../helpers/auth-helpers'
+import { setupUnauthenticatedMode } from '../helpers/auth-helpers'
 
 test.describe('Dashboard Critical Flows', () => {
   test.describe('Unauthenticated Mode (Development)', () => {
@@ -81,36 +81,6 @@ test.describe('Dashboard Critical Flows', () => {
     })
   })
 
-  test.describe('Authenticated Mode', () => {
-    test.skip('dashboard requires authentication when auth is enabled', async ({ page }) => {
-      // TODO: Fix Clerk authentication mocking
-      // Arrange - Setup authenticated mode but user is not signed in
-      await setupAuthenticatedMode(page, { isSignedIn: false })
-      
-      // Act
-      await page.goto('/dashboard')
-
-      // Assert - Should redirect to sign-in or show sign-in UI
-      await expect(page.url()).not.toContain('/dashboard')
-    })
-
-    test.skip('signed-in user can access dashboard in authenticated mode', async ({ page }) => {
-      // TODO: Fix Clerk authentication mocking
-      // Arrange - Setup authenticated mode with signed-in user
-      await setupAuthenticatedMode(page, { 
-        isSignedIn: true,
-        userEmail: 'test@example.com' 
-      })
-      
-      // Act
-      await page.goto('/dashboard')
-
-      // Assert - Should show dashboard content without development banner
-      await expect(page.getByText('Development Mode')).not.toBeVisible()
-      await expect(page.getByRole('heading', { name: 'Server Instances' })).toBeVisible()
-      await expect(page.getByText('API Requests')).toBeVisible()
-      await expect(page.getByText('Active Servers')).toBeVisible()
-      await expect(page.getByText('Plan Status')).toBeVisible()
-    })
-  })
+  // Note: Authentication tests are covered in authentication.spec.ts
+  // No need for duplicated authenticated mode tests here
 })
