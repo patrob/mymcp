@@ -16,9 +16,8 @@ test.describe('Authentication Flows', () => {
       await page.goto('/')
       
       // Assert - Should show direct dashboard link instead of sign-in
-      // Use more specific selector that matches the actual implementation
-      await expect(page.locator('a[href="/dashboard"]').first()).toBeVisible()
-      await expect(page.getByRole('button', { name: /sign in/i })).not.toBeVisible()
+      await expect(page.getByTestId('dashboard-link-unauthenticated')).toBeVisible()
+      await expect(page.getByTestId('sign-in-button')).not.toBeVisible()
     })
 
     test('dashboard is directly accessible in development mode', async ({ page }) => {
@@ -44,9 +43,8 @@ test.describe('Authentication Flows', () => {
       await page.goto('/')
       
       // Assert - Should show sign-in button instead of direct dashboard link
-      // The sign-in button is rendered by Clerk's SignInButton component
-      await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible()
-      await expect(page.locator('a[href="/dashboard"]').first()).not.toBeVisible()
+      await expect(page.getByTestId('sign-in-button')).toBeVisible()
+      await expect(page.getByTestId('dashboard-link-authenticated')).not.toBeVisible()
     })
 
     test('dashboard requires authentication when auth is enabled', async ({ page }) => {
@@ -56,16 +54,8 @@ test.describe('Authentication Flows', () => {
       // Act
       await page.goto('/dashboard')
       
-      // Assert - Should show redirect to sign-in component or be redirected away
-      // Check if redirect component is shown or if we're redirected away from dashboard
-      const redirectComponent = page.getByTestId('redirect-to-signin')
-      const isOnDashboard = page.url().includes('/dashboard')
-      
-      if (isOnDashboard) {
-        await expect(redirectComponent).toBeVisible({ timeout: 5000 })
-      } else {
-        await expect(page.url()).not.toContain('/dashboard')
-      }
+      // Assert - Should show redirect to sign-in component
+      await expect(page.getByTestId('redirect-to-signin')).toBeVisible()
     })
 
     test('signed-in users can access dashboard', async ({ page }) => {
@@ -80,7 +70,7 @@ test.describe('Authentication Flows', () => {
       
       // Assert - Should access dashboard without development banner
       await expect(page.getByText('Development Mode')).not.toBeVisible()
-      await expect(page.getByText('Server Instances')).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Server Instances' })).toBeVisible()
       await expect(page.getByText('API Requests')).toBeVisible()
     })
 
@@ -95,9 +85,8 @@ test.describe('Authentication Flows', () => {
       await page.goto('/')
       
       // Assert - Should show user menu and dashboard link
-      await expect(page.locator('a[href="/dashboard"]').first()).toBeVisible()
-      // UserButton might not have a specific test id, so check for presence of user-related element
-      await expect(page.locator('.cl-userButton, [data-testid="user-button"]')).toBeVisible()
+      await expect(page.getByTestId('dashboard-link-authenticated')).toBeVisible()
+      await expect(page.getByTestId('user-button')).toBeVisible()
     })
   })
 
@@ -113,15 +102,8 @@ test.describe('Authentication Flows', () => {
       // Act - Sign out
       await signOutDuringTest(page)
       
-      // Assert - Should show redirect component or be redirected away
-      const redirectComponent = page.getByTestId('redirect-to-signin')
-      const isOnDashboard = page.url().includes('/dashboard')
-      
-      if (isOnDashboard) {
-        await expect(redirectComponent).toBeVisible({ timeout: 5000 })
-      } else {
-        await expect(page.url()).not.toContain('/dashboard')
-      }
+      // Assert - Should show redirect component
+      await expect(page.getByTestId('redirect-to-signin')).toBeVisible()
     })
 
     test('signing in grants access to protected routes', async ({ page }) => {
@@ -134,7 +116,7 @@ test.describe('Authentication Flows', () => {
       
       // Assert - Should now be able to access dashboard
       await page.goto('/dashboard')
-      await expect(page.getByText('Server Instances')).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Server Instances' })).toBeVisible()
     })
   })
 })

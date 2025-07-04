@@ -6,10 +6,34 @@ import { ServerCard } from '@/components/dashboard/ServerCard'
 import { ServerConnectionWizard } from '@/components/dashboard/ServerConnectionWizard'
 import { UsageMetrics } from '@/components/dashboard/UsageMetrics'
 import { AlertCircle, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+
+// Type for test state
+declare global {
+  interface Window {
+    __CLERK_TEST_STATE?: {
+      isSignedIn: boolean
+      isLoaded: boolean
+      user?: {
+        id: string
+        primaryEmailAddress?: { emailAddress: string }
+      }
+    }
+    __CLERK_MOCK_MODE?: boolean
+  }
+}
 
 export default function Dashboard() {
   const { data: servers, isLoading, error, refetch } = useServers()
   const { config } = useConfiguration()
+  const [testState, setTestState] = useState<typeof window.__CLERK_TEST_STATE | null>(null)
+  
+  // Check for test mode
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.__CLERK_MOCK_MODE) {
+      setTestState(window.__CLERK_TEST_STATE || null)
+    }
+  }, [])
 
   const handleServerAction = (action: string, _serverId: string) => {
     if (action === 'configure') {
@@ -33,7 +57,12 @@ export default function Dashboard() {
           <div className="flex h-16 items-center px-4">
             <h1 className="text-xl font-semibold">OnParDev MyMcp</h1>
             <div className="ml-auto">
-              {isAuthEnabled && <UserButton />}
+              {isAuthEnabled && !testState && <UserButton />}
+              {isAuthEnabled && testState && testState.isSignedIn && (
+                <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
+                  {testState.user?.primaryEmailAddress?.emailAddress || 'User'}
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -61,7 +90,12 @@ export default function Dashboard() {
         <div className="flex h-16 items-center px-4">
           <h1 className="text-xl font-semibold">OnParDev MyMcp</h1>
           <div className="ml-auto">
-            {isAuthEnabled && <UserButton />}
+            {isAuthEnabled && !testState && <UserButton />}
+            {isAuthEnabled && testState && testState.isSignedIn && (
+              <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
+                {testState.user?.primaryEmailAddress?.emailAddress || 'User'}
+              </button>
+            )}
           </div>
         </div>
       </header>

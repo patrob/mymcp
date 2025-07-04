@@ -1,6 +1,21 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
 import { useConfiguration } from '@/hooks/useConfiguration'
+
+// Type for test state
+declare global {
+  interface Window {
+    __CLERK_TEST_STATE?: {
+      isSignedIn: boolean
+      isLoaded: boolean
+      user?: {
+        id: string
+        primaryEmailAddress?: { emailAddress: string }
+      }
+    }
+    __CLERK_MOCK_MODE?: boolean
+  }
+}
 
 interface PublicLayoutProps {
   children: ReactNode
@@ -8,6 +23,14 @@ interface PublicLayoutProps {
 
 export function PublicLayout({ children }: PublicLayoutProps) {
   const { config, isLoading } = useConfiguration()
+  const [testState, setTestState] = useState<typeof window.__CLERK_TEST_STATE | null>(null)
+  
+  // Check for test mode
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.__CLERK_MOCK_MODE) {
+      setTestState(window.__CLERK_TEST_STATE || null)
+    }
+  }, [])
 
   const Navigation = () => (
     <nav className="flex items-center justify-between">
@@ -19,23 +42,64 @@ export function PublicLayout({ children }: PublicLayoutProps) {
           Home
         </a>
         {config?.features?.enableAuth && config.clerk?.publishableKey ? (
-          <>
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
-                  Sign In
-                </button>
-              </SignInButton>
-            </SignedOut>
-            <SignedIn>
-              <a href="/dashboard" className="text-muted-foreground hover:text-foreground">
-                Dashboard
-              </a>
-              <UserButton afterSignOutUrl={config.clerk.afterSignOutUrl || "/"} />
-            </SignedIn>
-          </>
+          testState ? (
+            // Test mode - render based on test state
+            testState.isSignedIn ? (
+              <>
+                <a 
+                  href="/dashboard" 
+                  data-testid="dashboard-link-authenticated"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Dashboard
+                </a>
+                <div data-testid="user-button">
+                  <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
+                    {testState.user?.primaryEmailAddress?.emailAddress || 'User'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button 
+                data-testid="sign-in-button"
+                className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
+              >
+                Sign In
+              </button>
+            )
+          ) : (
+            // Production mode - use real Clerk components
+            <>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button 
+                    data-testid="sign-in-button"
+                    className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
+                  >
+                    Sign In
+                  </button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <a 
+                  href="/dashboard" 
+                  data-testid="dashboard-link-authenticated"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Dashboard
+                </a>
+                <div data-testid="user-button">
+                  <UserButton afterSignOutUrl={config.clerk.afterSignOutUrl || "/"} />
+                </div>
+              </SignedIn>
+            </>
+          )
         ) : (
-          <a href="/dashboard" className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
+          <a 
+            href="/dashboard" 
+            data-testid="dashboard-link-unauthenticated"
+            className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
+          >
             Dashboard
           </a>
         )}

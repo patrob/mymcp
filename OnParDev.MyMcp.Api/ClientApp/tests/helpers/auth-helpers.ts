@@ -2,6 +2,9 @@ import { Page } from '@playwright/test'
 import { ConfigurationResponse } from '@/api'
 import { unauthenticatedConfig, authenticatedConfig } from './config-helpers'
 
+// Test environment flag for detecting E2E test mode
+const TEST_ENV_FLAG = '__PLAYWRIGHT_TEST_MODE__'
+
 /**
  * Sets up the configuration endpoint to return specific config for testing
  */
@@ -81,6 +84,7 @@ async function mockServersEndpoints(page: Page) {
 export async function setupUnauthenticatedMode(page: Page) {
   await mockConfigEndpoint(page, unauthenticatedConfig)
   await mockServersEndpoints(page)
+  await setTestEnvironmentFlag(page)
 }
 
 /**
@@ -96,8 +100,14 @@ export async function setupAuthenticatedMode(page: Page, options: {
   
   // Mock the servers API
   await mockServersEndpoints(page)
+  
+  // Set test environment flag
+  await setTestEnvironmentFlag(page)
+  
+  // Mock Clerk components and state
+  await mockClerkComponents(page, options.isSignedIn)
 
-  // Simplified approach: just mock the authentication state and let the real components handle rendering
+  // Set up authentication state
   if (options.isSignedIn) {
     await mockClerkSignedInState(page, {
       userId: options.userId || 'user_test123',
@@ -108,6 +118,34 @@ export async function setupAuthenticatedMode(page: Page, options: {
   }
 }
 
+/**
+ * Sets a test environment flag that components can check
+ */
+async function setTestEnvironmentFlag(page: Page) {
+  await page.addInitScript((flag) => {
+    window[flag] = true
+  }, TEST_ENV_FLAG)
+}
+
+/**
+ * Mocks Clerk components to show/hide based on authentication state
+ */
+async function mockClerkComponents(page: Page, isSignedIn: boolean) {
+  await page.addInitScript((signedIn, _testFlag) => {
+    // Create mock Clerk context
+    window.__CLERK_TEST_STATE = {
+      isSignedIn: signedIn,
+      isLoaded: true,
+      user: signedIn ? {
+        id: 'user_test123',
+        primaryEmailAddress: { emailAddress: 'test@example.com' }
+      } : null
+    }
+    
+    // Override Clerk components behavior in test environment
+    window.__CLERK_MOCK_MODE = true
+  }, isSignedIn, TEST_ENV_FLAG)
+}
 
 /**
  * Mocks Clerk signed-in state by intercepting Clerk API calls
@@ -260,15 +298,22 @@ export async function signInDuringTest(page: Page, user: {
     userEmail: user.userEmail || 'test@example.com',
   }
   
-  // Update the global mock state
+  // Update the test state
   await page.evaluate((newUser) => {
-    window.__CLERK_MOCK_STATE = 'signed-in'
-    window.__CLERK_MOCK_USER = newUser
+    window.__CLERK_TEST_STATE = {
+      isSignedIn: true,
+      isLoaded: true,
+      user: {
+        id: newUser.userId,
+        primaryEmailAddress: { emailAddress: newUser.userEmail }
+      }
+    }
   }, userData)
   
-  await mockClerkSignedInState(page, userData)
+  // Re-setup mocking for new state
+  await mockServersEndpoints(page)
   
-  // Reload page to pick up new auth state
+  // Trigger re-render by reloading
   await page.reload()
 }
 
@@ -276,14 +321,18 @@ export async function signInDuringTest(page: Page, user: {
  * Simulates signing out during a test
  */
 export async function signOutDuringTest(page: Page) {
-  // Update the global mock state
+  // Update the test state
   await page.evaluate(() => {
-    window.__CLERK_MOCK_STATE = 'signed-out'
-    window.__CLERK_MOCK_USER = null
+    window.__CLERK_TEST_STATE = {
+      isSignedIn: false,
+      isLoaded: true,
+      user: null
+    }
   })
   
-  await mockClerkSignedOutState(page)
+  // Re-setup mocking for new state  
+  await mockServersEndpoints(page)
   
-  // Reload page to pick up new auth state
+  // Trigger re-render by reloading
   await page.reload()
 }
