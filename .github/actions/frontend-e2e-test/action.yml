@@ -58,18 +58,30 @@ runs:
     - name: Start API server for E2E tests
       shell: bash
       run: |
+        # Find available port for API server
+        API_PORT=5099
+        for port in 5099 5199 5299 5399 5499; do
+          if ! netstat -tuln 2>/dev/null | grep ":$port " && ! ss -tuln 2>/dev/null | grep ":$port "; then
+            API_PORT=$port
+            break
+          fi
+        done
+        
+        echo "Using API port: $API_PORT"
+        echo $API_PORT > api.port
+        
         # Start the API server in background for OpenAPI generation and E2E tests
-        echo "Starting API server for E2E tests..."
-        nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release --urls "http://0.0.0.0:5099" > api-e2e.log 2>&1 &
+        echo "Starting API server for E2E tests on port $API_PORT..."
+        nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release --urls "http://0.0.0.0:$API_PORT" > api-e2e.log 2>&1 &
         API_PID=$!
         echo "API PID: $API_PID"
         echo $API_PID > api.pid
         
         # Wait for API to be ready
-        echo "Waiting for API to be ready..."
+        echo "Waiting for API to be ready on port $API_PORT..."
         for i in {1..30}; do
-          if curl -f http://localhost:5099/health > /dev/null 2>&1; then
-            echo "API is ready for E2E tests"
+          if curl -f http://localhost:$API_PORT/health > /dev/null 2>&1; then
+            echo "API is ready for E2E tests on port $API_PORT"
             break
           fi
           echo "Waiting for API... (attempt $i/30)"
@@ -91,8 +103,9 @@ runs:
       shell: bash
       run: |
         cd OnParDev.MyMcp.Api/ClientApp
-        echo "Generating API client..."
-        npm run generate-api
+        API_PORT=$(cat ../../api.port)
+        echo "Generating API client using port $API_PORT..."
+        npx openapi-typescript-codegen --input http://localhost:$API_PORT/openapi/v1.json --output ./src/api --client fetch
 
     - name: Run E2E tests
       shell: bash
@@ -121,7 +134,7 @@ runs:
       if: always()
 
     - name: Upload E2E test results
-      if: failure()
+      if: failure() && !env.ACT
       uses: actions/upload-artifact@v4
       with:
         name: playwright-report-${{ github.run_id }}
@@ -129,7 +142,7 @@ runs:
         retention-days: 30
 
     - name: Upload E2E test traces
-      if: failure()
+      if: failure() && !env.ACT
       uses: actions/upload-artifact@v4
       with:
         name: playwright-traces-${{ github.run_id }}
