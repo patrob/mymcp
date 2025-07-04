@@ -1,0 +1,83 @@
+name: 'Frontend E2E Test'
+description: 'Run frontend end-to-end tests with Playwright'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '22'
+  dotnet-version:
+    description: '.NET version for API generation'
+    required: false
+    default: '9.0.x'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup .NET (for API generation)
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: './OnParDev.MyMcp.Api/ClientApp/package-lock.json'
+
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
+
+    - name: Install .NET dependencies
+      shell: bash
+      run: dotnet restore
+
+    - name: Build API for E2E tests
+      shell: bash
+      run: |
+        dotnet build --configuration Release
+
+    - name: Install frontend dependencies
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npm ci
+
+    - name: Install Playwright browsers
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npx playwright install --with-deps chromium
+
+    - name: Run E2E tests
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        # Only run chromium tests in CI for speed
+        npx playwright test --project=chromium
+      env:
+        CI: true
+        CLERK__PUBLISHABLEKEY: ${{ env.CLERK_PUBLISHABLE_KEY }}
+        CLERK__AUTHORITY: ${{ env.CLERK_AUTHORITY }}
+
+    - name: Upload E2E test results
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report-${{ github.run_id }}
+        path: ./OnParDev.MyMcp.Api/ClientApp/playwright-report/
+        retention-days: 30
+
+    - name: Upload E2E test traces
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-traces-${{ github.run_id }}
+        path: ./OnParDev.MyMcp.Api/ClientApp/test-results/
+        retention-days: 30

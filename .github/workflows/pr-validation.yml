@@ -9,20 +9,35 @@ env:
   NODE_VERSION: '22'
 
 jobs:
-  frontend-lint-test:
-    name: Frontend Lint & Test
+  frontend-unit-test:
+    name: Frontend Unit Test & Lint
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Run Frontend Test Suite
-      uses: ./.github/actions/frontend-test
+    - name: Run Frontend Unit Tests & Lint
+      uses: ./.github/actions/frontend-unit-test
       with:
         node-version: ${{ env.NODE_VERSION }}
         dotnet-version: ${{ env.DOTNET_VERSION }}
-        run-e2e: 'true'
         coverage: 'true'
+      env:
+        CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+        CLERK_AUTHORITY: ${{ secrets.CLERK_AUTHORITY }}
+
+  frontend-e2e-test:
+    name: Frontend E2E Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Frontend E2E Tests
+      uses: ./.github/actions/frontend-e2e-test
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        dotnet-version: ${{ env.DOTNET_VERSION }}
       env:
         CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
         CLERK_AUTHORITY: ${{ secrets.CLERK_AUTHORITY }}

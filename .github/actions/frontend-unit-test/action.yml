@@ -1,0 +1,111 @@
+name: 'Frontend Unit Test & Lint'
+description: 'Run frontend linting, type checking, and unit tests'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '22'
+  dotnet-version:
+    description: '.NET version for API generation'
+    required: false
+    default: '9.0.x'
+  coverage:
+    description: 'Whether to collect coverage'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup .NET (for API generation)
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: './OnParDev.MyMcp.Api/ClientApp/package-lock.json'
+
+    - name: Install .NET dependencies
+      shell: bash
+      run: dotnet restore
+
+    - name: Build API for OpenAPI generation
+      shell: bash
+      run: |
+        dotnet build --configuration Release
+
+    - name: Install frontend dependencies
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npm ci
+
+    - name: Run ESLint
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npm run lint
+
+    - name: Run TypeScript check
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        npx tsc --noEmit
+
+    - name: Generate API client
+      shell: bash
+      run: |
+        # Start API server for OpenAPI generation
+        echo "Starting API server for OpenAPI generation..."
+        nohup dotnet run --project OnParDev.MyMcp.Api --configuration Release > api.log 2>&1 &
+        API_PID=$!
+        echo "API PID: $API_PID"
+        
+        # Wait for API to be ready
+        echo "Waiting for API to be ready..."
+        for i in {1..30}; do
+          if curl -f http://localhost:5099/health > /dev/null 2>&1; then
+            echo "API is ready"
+            break
+          fi
+          echo "Waiting for API... (attempt $i/30)"
+          sleep 2
+        done
+        
+        # Generate API client
+        cd OnParDev.MyMcp.Api/ClientApp
+        npm run generate-api
+        
+        # Stop the API server
+        cd ..
+        echo "Stopping API server (PID: $API_PID)..."
+        kill $API_PID || true
+        sleep 5
+        pkill -f "dotnet run" || true
+        echo "API server stopped"
+      env:
+        CLERK__PUBLISHABLEKEY: ${{ env.CLERK_PUBLISHABLE_KEY }}
+        CLERK__AUTHORITY: ${{ env.CLERK_AUTHORITY }}
+
+    - name: Run Vitest unit tests
+      shell: bash
+      run: |
+        cd OnParDev.MyMcp.Api/ClientApp
+        if [ "${{ inputs.coverage }}" = "true" ]; then
+          npm run test:coverage
+        else
+          npm test
+        fi
+
+    - name: Upload unit test coverage
+      if: inputs.coverage == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-unit-coverage-${{ github.run_id }}
+        path: ./OnParDev.MyMcp.Api/ClientApp/coverage/
+        retention-days: 30
