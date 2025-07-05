@@ -1,4 +1,5 @@
 # Agents Collaboration
+
 These guidelines mirror **CLAUDE.md** so multiple agents can work consistently.
 
 We're building production-quality code together. Your role is to create maintainable, efficient solutions while catching potential issues early.
@@ -204,3 +205,42 @@ Would you like me to [specific improvement]?"
 - **REMINDER**: If this file hasn't been referenced in 30+ minutes, RE-READ IT!
 
 Avoid complex abstractions or "clever" code. The simple, obvious solution is probably better, and my guidance helps you stay focused on what matters.
+
+## Architecture Decision Records (ADRs)
+
+Document all architecturally significant decisions using Architecture Decision Records. An ADR captures a single architectural decision and its rationale, helping future developers understand why choices were made.
+
+### ADR Structure
+
+Each ADR should include:
+
+- **Problem statement with context** - What decision needs to be made and why
+- **Options considered** - Alternative approaches evaluated
+- **Decision outcome** - The chosen solution
+- **Important tradeoffs** - What was gained/lost with this decision
+- **Confidence level** - How certain we are about this decision
+
+### ADR Process
+
+- **Start early** - Begin ADRs at project onset
+- **Maintain throughout** - Keep updating as the project evolves
+- **Append-only log** - Never delete or modify existing ADRs
+- **Store openly** - Keep ADRs with project documentation for easy access
+- **Stay focused** - Keep records pithy, assertive, and factual
+
+### When to Create ADRs
+
+Create ADRs for decisions that:
+
+- Have significant impact on system architecture
+- Affect multiple components or teams
+- Involve important technology choices
+- Include significant tradeoffs
+- May need to be revisited later
+
+### ADR Template
+
+Use a consistent template for all ADRs. Break complex decisions into multiple ADRs if needed (short-term, mid-term, long-term approaches).
+
+Reference: [Microsoft Learn ADR Guide](https://learn.microsoft.com/en-us/azure/well-architected/architect-role/architecture-decision-record) and [ADR Templates](https://adr.github.io/)
+

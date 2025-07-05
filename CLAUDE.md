@@ -70,9 +70,9 @@ Run: `make fmt && make test && make lint`
 
 This includes:
 
-- Formatting issues (gofmt, black, prettier, etc.)
-- Linting violations (golangci-lint, eslint, etc.)
-- Forbidden patterns (time.Sleep, panic(), interface{})
+- Formatting issues (`dotnet format`, prettier, etc.)
+- Linting violations (.NET analyzers, eslint, etc.)
+- Forbidden patterns (`Thread.Sleep`, excessive `console.log`, `any` types)
 - ALL other checks
 
 Your code must be 100% clean. No exceptions.
@@ -104,41 +104,39 @@ Your code must be 100% clean. No exceptions.
 - [ ] What comes next
 ```
 
-## Go-Specific Rules
+## TypeScript & .NET Best Practices
 
 ### FORBIDDEN - NEVER DO THESE:
 
-- **NO interface{}** or **any{}** - use concrete types!
-- **NO time.Sleep()** or busy waits - use channels for synchronization!
+- **NO `any` or `object`** types – use explicit generics or interfaces
+- **NO busy waits** like `setTimeout` polling – rely on `async/await` or event-driven code
 - **NO** keeping old and new code together
 - **NO** migration functions or compatibility layers
-- **NO** versioned function names (processV2, handleNew)
-- **NO** custom error struct hierarchies
-- **NO** TODOs in final code
+- **NO** versioned method names (`ProcessV2`, `HandleNew`)
+- **NO** custom error hierarchies beyond standard exception types
+- **NO** TODO comments in final code
 
-> **AUTOMATED ENFORCEMENT**: The smart-lint hook will BLOCK commits that violate these rules.  
+> **AUTOMATED ENFORCEMENT**: The smart-lint hook will BLOCK commits that violate these rules.
 > When you see `❌ FORBIDDEN PATTERN`, you MUST fix it immediately!
 
 ### Required Standards:
 
 - **Delete** old code when replacing it
-- **Meaningful names**: `userID` not `id`
+- **Meaningful names**: `userId` not `id`
 - **Early returns** to reduce nesting
-- **Concrete types** from constructors: `func NewServer() *Server`
-- **Simple errors**: `return fmt.Errorf("context: %w", err)`
-- **Table-driven tests** for complex logic
-- **Channels for synchronization**: Use channels to signal readiness, not sleep
-- **Select for timeouts**: Use `select` with timeout channels, not sleep loops
+- **Dependency injection** for services and configuration
+- **Async/await everywhere**: return `Task` in C# and `Promise` in TypeScript
+- **Table-driven tests** (xUnit theories or Jest table tests) for complex logic
 
 ## Implementation Standards
 
 ### Our code is complete when:
 
-- ? All linters pass with zero issues
-- ? All tests pass
-- ? Feature works end-to-end
-- ? Old code is deleted
-- ? Godoc on all exported symbols
+- ✓ All linters pass with zero issues
+- ✓ All tests pass
+- ✓ Feature works end-to-end
+- ✓ Old code is deleted
+- ✓ XML documentation on all public APIs
 
 ### Testing Strategy
 
@@ -150,9 +148,10 @@ Your code must be 100% clean. No exceptions.
 ### Project Structure
 
 ```
-cmd/        # Application entrypoints
-internal/   # Private code (the majority goes here)
-pkg/        # Public libraries (only if truly reusable)
+OnParDev.MyMcp.Api/                 # ASP.NET Core API
+OnParDev.MyMcp.Api.UnitTests/       # Unit tests
+OnParDev.MyMcp.Api.IntegrationTests/ # Integration tests
+OnParDev.MyMcp.Api/ClientApp/       # React frontend
 ```
 
 ## Problem-Solving Together
@@ -174,12 +173,12 @@ My insights on better approaches are valued - please ask for them!
 
 - No premature optimization
 - Benchmark before claiming something is faster
-- Use pprof for real bottlenecks
+- Use BenchmarkDotNet or Node performance tools for real bottlenecks
 
 ### **Security Always**:
 
 - Validate all inputs
-- Use crypto/rand for randomness
+- Use `RandomNumberGenerator` in .NET or Node's `crypto` module for randomness
 - Prepared statements for SQL (never concatenate!)
 
 ## Communication Protocol
@@ -204,3 +203,42 @@ Would you like me to [specific improvement]?"
 - **REMINDER**: If this file hasn't been referenced in 30+ minutes, RE-READ IT!
 
 Avoid complex abstractions or "clever" code. The simple, obvious solution is probably better, and my guidance helps you stay focused on what matters.
+
+## Architecture Decision Records (ADRs)
+
+Document all architecturally significant decisions using Architecture Decision Records. An ADR captures a single architectural decision and its rationale, helping future developers understand why choices were made.
+
+### ADR Structure
+
+Each ADR should include:
+
+- **Problem statement with context** - What decision needs to be made and why
+- **Options considered** - Alternative approaches evaluated
+- **Decision outcome** - The chosen solution
+- **Important tradeoffs** - What was gained/lost with this decision
+- **Confidence level** - How certain we are about this decision
+
+### ADR Process
+
+- **Start early** - Begin ADRs at project onset
+- **Maintain throughout** - Keep updating as the project evolves
+- **Append-only log** - Never delete or modify existing ADRs
+- **Store openly** - Keep ADRs with project documentation for easy access
+- **Stay focused** - Keep records pithy, assertive, and factual
+
+### When to Create ADRs
+
+Create ADRs for decisions that:
+
+- Have significant impact on system architecture
+- Affect multiple components or teams
+- Involve important technology choices
+- Include significant tradeoffs
+- May need to be revisited later
+
+### ADR Template
+
+Use a consistent template for all ADRs. Break complex decisions into multiple ADRs if needed (short-term, mid-term, long-term approaches).
+
+Reference: [Microsoft Learn ADR Guide](https://learn.microsoft.com/en-us/azure/well-architected/architect-role/architecture-decision-record) and [ADR Templates](https://adr.github.io/)
+
