@@ -611,13 +611,13 @@ jobs:
               echo "✅ No database changes - skipping migrations"
             fi
             
-            # Update application if backend changed
+            # Update application if backend or frontend changed
             if docker ps | grep -q "mymcp-app"; then
-              if [ -n "$BACKEND_CHANGED" ] || [ -n "$DB_CHANGED" ]; then
-                echo "🔄 Backend changes detected - updating application..."
+              if [ -n "$BACKEND_CHANGED" ] || [ -n "$DB_CHANGED" ] || [ -n "$FRONTEND_CHANGED" ]; then
+                echo "🔄 Application changes detected - updating application..."
                 docker-compose -f docker-compose.production.yml up -d --no-deps app
               else
-                echo "✅ No backend changes - keeping existing app container"
+                echo "✅ No application changes - keeping existing app container"
               fi
             else
               echo "🆕 Starting application..."
