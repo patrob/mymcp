@@ -370,6 +370,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 10  # Fetch last 10 commits for proper git diff
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -545,7 +547,28 @@ jobs:
             
             # Check what files have changed to determine deployment strategy
             git fetch origin main || echo "Git fetch failed, deploying all services"
-            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+            
+            # Try multiple strategies to detect changes
+            CHANGED_FILES=""
+            if [ -n "$(git log --oneline -n 2 2>/dev/null)" ]; then
+              # Strategy 1: Compare with previous commit if history exists
+              CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+            fi
+            
+            if [ -z "$CHANGED_FILES" ]; then
+              # Strategy 2: Compare with origin/main if previous strategy failed
+              CHANGED_FILES=$(git diff --name-only origin/main HEAD 2>/dev/null || echo "")
+            fi
+            
+            if [ -z "$CHANGED_FILES" ]; then
+              # Strategy 3: If git diff fails, check modified files in last commit
+              CHANGED_FILES=$(git show --name-only --format="" HEAD 2>/dev/null || echo "")
+            fi
+            
+            # Debug output
+            echo "🔍 Change detection debug:"
+            echo "  Detected changed files: ${CHANGED_FILES:-"No files detected"}"
+            
             DB_CHANGED=$(echo "$CHANGED_FILES" | grep -E "(db/|docker-compose|Dockerfile)" || echo "")
             FRONTEND_CHANGED=$(echo "$CHANGED_FILES" | grep -E "(ClientApp/|nginx/)" || echo "")
             BACKEND_CHANGED=$(echo "$CHANGED_FILES" | grep -E "(OnParDev.MyMcp.Api/.*\.(cs|csproj))" || echo "")
