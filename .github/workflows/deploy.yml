@@ -580,7 +580,12 @@ jobs:
             
             # Build new images first (without stopping old containers)
             echo "🔨 Building new images..."
-            docker-compose -f docker-compose.production.yml build
+            if [ -n "$FRONTEND_CHANGED" ] || [ -n "$BACKEND_CHANGED" ]; then
+              echo "🔄 Source code changes detected - forcing rebuild without cache..."
+              docker-compose -f docker-compose.production.yml build --no-cache
+            else
+              docker-compose -f docker-compose.production.yml build
+            fi
             
             # Smart container management - only restart what changed
             echo "⚡ Performing selective container updates..."
