@@ -1,6 +1,4 @@
-# Agents Collaboration
-
-These guidelines mirror **CLAUDE.md** so multiple agents can work consistently.
+# Development Partnership
 
 We're building production-quality code together. Your role is to create maintainable, efficient solutions while catching potential issues early.
 
@@ -106,7 +104,7 @@ Your code must be 100% clean. No exceptions.
 - [ ] What comes next
 ```
 
-## TypeScript & .NET Best Practices
+## TypeScript Best Practices
 
 ### FORBIDDEN - NEVER DO THESE:
 
@@ -134,11 +132,11 @@ Your code must be 100% clean. No exceptions.
 
 ### Our code is complete when:
 
-- ? All linters pass with zero issues
-- ? All tests pass
-- ? Feature works end-to-end
-- ? Old code is deleted
-- ? Godoc on all exported symbols
+- ✓ All linters pass with zero issues
+- ✓ All tests pass
+- ✓ Feature works end-to-end
+- ✓ Old code is deleted
+- ✓ XML documentation on all public APIs
 
 ### Testing Strategy
 
@@ -146,15 +144,6 @@ Your code must be 100% clean. No exceptions.
 - Simple CRUD ? Write tests after
 - Hot paths ? Add benchmarks
 - Skip tests for main() and simple CLI parsing
-
-### Project Structure
-
-```
-OnParDev.MyMcp.Api/                 # ASP.NET Core API
-OnParDev.MyMcp.Api.UnitTests/       # Unit tests
-OnParDev.MyMcp.Api.IntegrationTests/ # Integration tests
-OnParDev.MyMcp.Api/ClientApp/       # React frontend
-```
 
 ## Problem-Solving Together
 

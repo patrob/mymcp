@@ -1,0 +1,23 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "env": {
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "@clerk_publishable_key",
+    "CLERK_SECRET_KEY": "@clerk_secret_key",
+    "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
+    "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
+    "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/dashboard",
+    "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/dashboard",
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe_publishable_key",
+    "STRIPE_SECRET_KEY": "@stripe_secret_key",
+    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
+    "STRIPE_DEV_PRICE_ID": "@stripe_dev_price_id",
+    "STRIPE_PRO_PRICE_ID": "@stripe_pro_price_id",
+    "STRIPE_TEAM_PRICE_ID": "@stripe_team_price_id",
+    "CLERK_API_URL": "https://api.clerk.com/v1"
+  }
+}
