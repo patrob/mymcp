@@ -8,6 +8,16 @@ export class Database {
     email: string
     name?: string
   }): Promise<User | null> {
+    // First check if user already exists
+    const existingUser = await this.getUser(userData.id)
+    if (existingUser) {
+      console.log('User already exists, updating instead')
+      return await this.updateUser(userData.id, {
+        email: userData.email,
+        name: userData.name,
+      })
+    }
+
     const { data, error } = await supabaseAdmin
       .from('users')
       .insert([userData])
@@ -61,6 +71,16 @@ export class Database {
     status: Subscription['status']
     planId: SubscriptionPlan
   }): Promise<Subscription | null> {
+    // Check if subscription already exists for this user
+    const existingSubscription = await this.getSubscription(subscriptionData.userId)
+    if (existingSubscription) {
+      console.log('Subscription already exists for user, updating instead')
+      return await this.updateSubscription(existingSubscription.id, {
+        status: subscriptionData.status,
+        planId: subscriptionData.planId,
+      })
+    }
+
     const { data, error } = await supabaseAdmin
       .from('subscriptions')
       .insert([{
@@ -90,6 +110,25 @@ export class Database {
 
     if (error) {
       console.error('Error fetching subscription:', error)
+      return null
+    }
+
+    return data
+  }
+
+  static async updateSubscription(
+    subscriptionId: string,
+    updates: Partial<Subscription>
+  ): Promise<Subscription | null> {
+    const { data, error } = await supabaseAdmin
+      .from('subscriptions')
+      .update(updates)
+      .eq('id', subscriptionId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating subscription:', error)
       return null
     }
 

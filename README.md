@@ -42,12 +42,27 @@ A modern SaaS application for managing Model Context Protocol (MCP) servers, bui
    - Supabase URL and keys
    - Stripe keys
 
-4. **Run the development server**
+4. **Seed the database and Clerk with test users (recommended)**
+   ```bash
+   npm run seed
+   ```
+   This automatically creates test users in both Clerk and your database:
+   - `patrob+mymcp+free@gmail.com` (Free tier) - Password: `TestPassword123!`
+   - `patrob+mymcp+dev@gmail.com` (Dev tier) - Password: `TestPassword123!`
+   - `patrob+mymcp+pro@gmail.com` (Pro tier) - Password: `TestPassword123!`
+   - `patrob+mymcp+team@gmail.com` (Team tier) - Password: `TestPassword123!`
+   
+   To completely reset and recreate all test data:
+   ```bash
+   npm run seed:reset
+   ```
+
+5. **Run the development server**
    ```bash
    npm run dev
    ```
 
-5. **Open [http://localhost:3000](http://localhost:3000)**
+6. **Open [http://localhost:3000](http://localhost:3000)**
 
 ## Project Structure
 
@@ -76,6 +91,52 @@ src/
 - `npm run type-check` - Run TypeScript type checking
 - `npm run format` - Format code with Prettier
 - `npm test` - Run tests
+- `npm run seed` - Seed database with test users
+- `npm run seed:reset` - Clear and re-seed database
+
+## Development Workflow
+
+### Testing Locally
+
+The seeded test users allow you to test the full application without setting up webhooks:
+
+1. **Free Tier User** (`patrob+mymcp+free@gmail.com`)
+   - User ID: `user_free_test`
+   - Can only use built-in MCP servers
+   - No custom servers allowed
+
+2. **Dev Tier User** (`patrob+mymcp+dev@gmail.com`)
+   - User ID: `user_dev_test`
+   - 1 custom MCP server included
+   - Has sample GitHub integration server
+
+3. **Pro Tier User** (`patrob+mymcp+pro@gmail.com`)
+   - User ID: `user_pro_test`
+   - Up to 3 custom MCP servers
+   - Sample servers with different statuses (active, inactive, error)
+
+4. **Team Tier User** (`patrob+mymcp+team@gmail.com`)
+   - User ID: `user_team_test`
+   - Unlimited custom MCP servers
+   - Multiple sample servers demonstrating full features
+
+### Testing with Automated Setup
+
+The seeding script creates a complete test environment:
+
+1. **Automated Clerk Integration** - Creates users directly in Clerk (no manual setup needed)
+2. **Perfect Synchronization** - Database records use actual Clerk user IDs
+3. **Duplication Prevention** - Safe to run multiple times without creating duplicates
+4. **Sample Data** - Each tier includes realistic MCP servers with different statuses
+
+**To test the signup flow:**
+1. Run `npm run seed` to create test users
+2. Visit `/sign-in` and use any test email with password `TestPassword123!`
+3. Dashboard will immediately show tier-appropriate data
+
+**To test new user signup:**
+1. Use a different email address to test the real signup → webhook → dashboard flow
+2. The Clerk webhook will automatically create the database record
 
 ## Deployment
 
