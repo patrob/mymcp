@@ -10,15 +10,15 @@ export const metadata: Metadata = {
   description: 'Manage your MCP (Model Context Protocol) servers with ease',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={inter.className}>{children}</body>
+        <body
+          className={`${inter.className} min-h-screen bg-gradient-to-br from-slate-50 to-blue-50`}
+        >
+          {children}
+        </body>
       </html>
     </ClerkProvider>
   )

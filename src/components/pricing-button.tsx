@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button'
 import { PRICING_TIERS } from '@/lib/stripe'
 
 interface PricingButtonProps {
-  tier: typeof PRICING_TIERS[0]
+  tier: (typeof PRICING_TIERS)[0]
+  className?: string
 }
 
-export function PricingButton({ tier }: PricingButtonProps) {
+export function PricingButton({ tier, className }: PricingButtonProps) {
   const handleCheckout = async () => {
     try {
       const response = await fetch('/api/stripe/checkout', {
@@ -34,7 +35,7 @@ export function PricingButton({ tier }: PricingButtonProps) {
   }
 
   return (
-    <Button onClick={handleCheckout} className="w-full">
+    <Button onClick={handleCheckout} className={className || 'w-full'}>
       Subscribe
     </Button>
   )
