@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { getCurrentUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { Database } from '@/lib/db'
 import { PRICING_TIERS } from '@/lib/stripe'
@@ -18,19 +18,43 @@ import {
 import Link from 'next/link'
 
 export default async function DashboardPage() {
-  const { userId } = auth()
+  console.log('🔍 Dashboard page starting...')
+  
+  const { userId } = await getCurrentUser()
+  console.log('🔍 User ID:', userId)
 
   if (!userId) {
+    console.log('🔍 No user ID, redirecting to sign-in')
     redirect('/sign-in')
   }
 
-  const userWithSubscription = await Database.getUserWithSubscription(userId)
-  if (!userWithSubscription) {
-    redirect('/sign-in')
+  let userWithSubscription
+  let servers
+  
+  try {
+    userWithSubscription = await Database.getUserWithSubscription(userId)
+    if (!userWithSubscription) {
+      console.log('User not found in database, creating default user data')
+      // Create a default user structure instead of redirecting
+      userWithSubscription = {
+        user: { id: userId, email: 'Unknown', name: 'User' },
+        subscription: { planId: 'free', status: 'active' },
+      }
+    }
+    
+    servers = await Database.getUserMCPServers(userId)
+  } catch (error) {
+    console.error('Error fetching user data:', error)
+    // Instead of redirecting (which causes loops), show dashboard with default data
+    userWithSubscription = {
+      user: { id: userId, email: 'Unknown', name: 'User' },
+      subscription: { planId: 'free', status: 'active' },
+    }
+    servers = []
+    console.log('Using default user data due to database error')
   }
 
   const { subscription } = userWithSubscription
-  const servers = await Database.getUserMCPServers(userId)
   const planId = subscription?.planId || 'free'
   const currentTier = PRICING_TIERS.find((t) => t.id === planId)
 
@@ -59,6 +83,14 @@ export default async function DashboardPage() {
   const canAddServer =
     currentTier?.maxServers === -1 ||
     (currentTier?.maxServers && servers.length < currentTier.maxServers)
+
+  console.log('🔍 Dashboard data:', {
+    userId,
+    planId,
+    currentTier: currentTier?.name,
+    serversCount: servers.length,
+    canAddServer
+  })
 
   // Mock built-in servers for demo
   const builtInServers = [

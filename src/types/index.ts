@@ -40,6 +40,7 @@ export interface PricingTier {
   maxServers: number
   stripePriceId: string
   popular?: boolean
+  comingSoon?: boolean
 }
 
 export interface GitHubRepo {

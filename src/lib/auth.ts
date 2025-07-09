@@ -1,17 +1,26 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/pricing',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/stripe/webhook',
-])
+// Re-export auth function for consistent usage across the app
+export { auth }
 
-export default clerkMiddleware((auth, req) => {
-  if (!isPublicRoute(req)) auth().protect()
-})
+// Helper function to safely get user ID with error handling
+export async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const { userId } = await auth()
+    return userId
+  } catch (error) {
+    console.error('Error getting current user ID:', error)
+    return null
+  }
+}
 
-export const config = {
-  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+// Helper function to safely get user with error handling
+export async function getCurrentUser() {
+  try {
+    const authResult = await auth()
+    return authResult
+  } catch (error) {
+    console.error('Error getting current user:', error)
+    return { userId: null, user: null }
+  }
 }

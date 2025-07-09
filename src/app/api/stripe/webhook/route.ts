@@ -132,9 +132,14 @@ export async function POST(request: NextRequest) {
 
 function getPlanIdFromPriceId(priceId: string): 'dev' | 'pro' | 'team' | null {
   const priceMap: Record<string, 'dev' | 'pro' | 'team'> = {
+    // Monthly price IDs
     [process.env.STRIPE_DEV_PRICE_ID || 'price_dev_placeholder']: 'dev',
     [process.env.STRIPE_PRO_PRICE_ID || 'price_pro_placeholder']: 'pro',
     [process.env.STRIPE_TEAM_PRICE_ID || 'price_team_placeholder']: 'team',
+    // Annual price IDs
+    [process.env.STRIPE_DEV_ANNUAL_PRICE_ID || 'price_dev_annual_placeholder']: 'dev',
+    [process.env.STRIPE_PRO_ANNUAL_PRICE_ID || 'price_pro_annual_placeholder']: 'pro',
+    [process.env.STRIPE_TEAM_ANNUAL_PRICE_ID || 'price_team_annual_placeholder']: 'team',
   }
 
   return priceMap[priceId] || null

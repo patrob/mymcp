@@ -10,13 +10,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { planId } = await request.json()
+    const { planId, interval } = await request.json()
 
-    if (!planId) {
-      return NextResponse.json({ error: 'Plan ID is required' }, { status: 400 })
+    if (!planId || !interval) {
+      return NextResponse.json({ error: 'Plan ID and interval are required' }, { status: 400 })
     }
 
-    const tier = PRICING_TIERS.find(t => t.id === planId)
+    const tier = PRICING_TIERS.find(t => t.id === planId && t.interval === interval)
     if (!tier || tier.id === 'free') {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
     }

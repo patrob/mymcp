@@ -13,6 +13,21 @@ export const PRICING_TIERS: PricingTier[] = [
     interval: 'month',
     maxServers: 0,
     stripePriceId: '',
+    popular: true,
+    features: [
+      'Access to built-in MCP servers',
+      'Community support',
+      'Basic documentation',
+    ],
+  },
+  {
+    id: 'free',
+    name: 'Free',
+    price: 0,
+    interval: 'year',
+    maxServers: 0,
+    stripePriceId: '',
+    popular: true,
     features: [
       'Access to built-in MCP servers',
       'Community support',
@@ -22,10 +37,26 @@ export const PRICING_TIERS: PricingTier[] = [
   {
     id: 'dev',
     name: 'Developer',
-    price: 9,
+    price: 14,
     interval: 'month',
     maxServers: 1,
     stripePriceId: process.env.STRIPE_DEV_PRICE_ID || 'price_dev_placeholder',
+    comingSoon: true,
+    features: [
+      'Everything in Free',
+      '1 custom MCP server',
+      'GitHub integration',
+      'Email support',
+    ],
+  },
+  {
+    id: 'dev',
+    name: 'Developer',
+    price: 140,
+    interval: 'year',
+    maxServers: 1,
+    stripePriceId: process.env.STRIPE_DEV_ANNUAL_PRICE_ID || 'price_dev_annual_placeholder',
+    comingSoon: true,
     features: [
       'Everything in Free',
       '1 custom MCP server',
@@ -40,7 +71,23 @@ export const PRICING_TIERS: PricingTier[] = [
     interval: 'month',
     maxServers: 3,
     stripePriceId: process.env.STRIPE_PRO_PRICE_ID || 'price_pro_placeholder',
-    popular: true,
+    comingSoon: true,
+    features: [
+      'Everything in Developer',
+      'Up to 3 custom MCP servers',
+      'Advanced analytics',
+      'Priority support',
+      'Custom integrations',
+    ],
+  },
+  {
+    id: 'pro',
+    name: 'Professional',
+    price: 290,
+    interval: 'year',
+    maxServers: 3,
+    stripePriceId: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || 'price_pro_annual_placeholder',
+    comingSoon: true,
     features: [
       'Everything in Developer',
       'Up to 3 custom MCP servers',
@@ -52,10 +99,28 @@ export const PRICING_TIERS: PricingTier[] = [
   {
     id: 'team',
     name: 'Team',
-    price: 99,
+    price: 140,
     interval: 'month',
     maxServers: -1, // unlimited
     stripePriceId: process.env.STRIPE_TEAM_PRICE_ID || 'price_team_placeholder',
+    comingSoon: true,
+    features: [
+      'Everything in Professional',
+      'Unlimited custom MCP servers',
+      'Team collaboration',
+      'Advanced security',
+      'Dedicated support',
+      'Custom onboarding',
+    ],
+  },
+  {
+    id: 'team',
+    name: 'Team',
+    price: 1400,
+    interval: 'year',
+    maxServers: -1, // unlimited
+    stripePriceId: process.env.STRIPE_TEAM_ANNUAL_PRICE_ID || 'price_team_annual_placeholder',
+    comingSoon: true,
     features: [
       'Everything in Professional',
       'Unlimited custom MCP servers',
@@ -144,4 +209,15 @@ export async function getStripeSubscription(subscriptionId: string) {
     console.error('Error fetching subscription:', error)
     return null
   }
+}
+
+export function getPricingTiersByInterval(interval: 'month' | 'year') {
+  return PRICING_TIERS.filter(tier => tier.interval === interval)
+}
+
+export function calculateAnnualSavings(monthlyPrice: number, annualPrice: number) {
+  const monthlyTotal = monthlyPrice * 12
+  const savings = monthlyTotal - annualPrice
+  const savingsPercentage = monthlyTotal === 0 ? 0 : Math.round((savings / monthlyTotal) * 100)
+  return { savings, savingsPercentage }
 }

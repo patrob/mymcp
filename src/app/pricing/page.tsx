@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,11 +12,15 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { PRICING_TIERS } from '@/lib/stripe'
+import { getPricingTiersByInterval, calculateAnnualSavings } from '@/lib/stripe'
 import { PricingButton } from '@/components/pricing-button'
+import { BillingPeriodToggle } from '@/components/billing-period-toggle'
 import { Check } from 'lucide-react'
 
 export default function PricingPage() {
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annually'>('monthly')
+  const interval = billingPeriod === 'monthly' ? 'month' : 'year'
+  const pricingTiers = getPricingTiersByInterval(interval)
   return (
     <div className="min-h-screen">
       <header className="px-4 lg:px-6 h-14 flex items-center">
@@ -36,16 +43,20 @@ export default function PricingPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Choose Your Plan</h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
               Start for free and upgrade as you grow. All plans include access to our built-in MCP
               servers.
             </p>
+            <BillingPeriodToggle
+              defaultPeriod={billingPeriod}
+              onPeriodChange={setBillingPeriod}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {PRICING_TIERS.map((tier) => (
+            {pricingTiers.map((tier) => (
               <Card
-                key={tier.id}
+                key={`${tier.id}-${tier.interval}`}
                 className={`relative border-0 shadow-lg hover:shadow-xl transition-all duration-300 ${tier.popular ? 'ring-2 ring-blue-500' : ''}`}
               >
                 {tier.popular && (
@@ -83,6 +94,10 @@ export default function PricingPage() {
                   {tier.id === 'free' ? (
                     <Button asChild className="w-full">
                       <Link href="/sign-up">Get Started</Link>
+                    </Button>
+                  ) : tier.comingSoon ? (
+                    <Button disabled className="w-full">
+                      Coming Soon
                     </Button>
                   ) : tier.id === 'team' ? (
                     <Button asChild variant="outline" className="w-full">

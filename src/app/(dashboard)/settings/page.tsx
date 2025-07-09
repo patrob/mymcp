@@ -1,4 +1,5 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { getCurrentUser } from '@/lib/auth'
+import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { Database } from '@/lib/db'
 import { PRICING_TIERS } from '@/lib/stripe'
@@ -9,16 +10,25 @@ import { BillingPortalButton } from '@/components/billing-portal-button'
 import { User, CreditCard, Settings } from 'lucide-react'
 
 export default async function SettingsPage() {
-  const { userId } = auth()
+  const { userId } = await getCurrentUser()
   
   if (!userId) {
     redirect('/sign-in')
   }
 
-  const user = await currentUser()
-  const userWithSubscription = await Database.getUserWithSubscription(userId)
+  let user
+  let userWithSubscription
   
-  if (!userWithSubscription) {
+  try {
+    user = await currentUser()
+    userWithSubscription = await Database.getUserWithSubscription(userId)
+    
+    if (!userWithSubscription) {
+      console.log('User not found in database, redirecting to sign-in')
+      redirect('/sign-in')
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error)
     redirect('/sign-in')
   }
 

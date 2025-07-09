@@ -18,6 +18,7 @@ export function PricingButton({ tier, className }: PricingButtonProps) {
         },
         body: JSON.stringify({
           planId: tier.id,
+          interval: tier.interval,
         }),
       })
 
