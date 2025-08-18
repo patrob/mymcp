@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -101,7 +101,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -141,7 +141,7 @@ jobs:
         working-directory: ./OnParDev.MyMcp.Api/ClientApp
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup .NET (for API generation)
         uses: actions/setup-dotnet@v4
@@ -223,7 +223,7 @@ jobs:
           - 5432:5432
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -305,7 +305,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -369,7 +369,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 10  # Fetch last 10 commits for proper git diff
 
