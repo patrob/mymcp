@@ -33,6 +33,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation.AspNetCore" VersionOverride="11.3.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" VersionOverride="9.0.8" />
+  <PackageReference Include="Microsoft.AspNetCore.OpenApi" VersionOverride="9.0.8" />
+  <PackageReference Include="Microsoft.AspNetCore.SpaProxy" VersionOverride="9.0.8" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore" VersionOverride="9.0.8" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" VersionOverride="9.0.8" />
+  <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" VersionOverride="9.0.4" />
+  <PackageReference Include="Scalar.AspNetCore" VersionOverride="1.2.76" />
     <ProjectReference Include="..\OnParDev.MyMcp.Api\OnParDev.MyMcp.Api.csproj" />
   </ItemGroup>
 
