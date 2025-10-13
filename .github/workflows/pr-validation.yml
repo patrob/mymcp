@@ -17,10 +17,10 @@ jobs:
         working-directory: ./OnParDev.MyMcp.Api/ClientApp
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
@@ -50,10 +50,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
@@ -108,10 +108,10 @@ jobs:
           - 5432:5432
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
@@ -155,10 +155,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
@@ -193,15 +193,15 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Setup .NET (for API generation)
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
